@@ -17,6 +17,7 @@ window.initTabs = function() {
 // Event listeners
 window.initEventListeners = function() {
     document.getElementById('play-pause').addEventListener('click', window.togglePlay);
+    document.getElementById('clear-sequencer').addEventListener('click', window.clearSequencer);
     document.getElementById('bpm-slider').addEventListener('input', window.updateBPM);
     // Bar selector
     document.querySelectorAll('.bar-btn').forEach(btn => {

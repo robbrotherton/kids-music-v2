@@ -28,6 +28,19 @@ window.playDrumPad = function(e) {
     if (window.drumSounds[soundIndex]) {
         window.drumSounds[soundIndex].triggerAttackRelease('C2', '8n');
     }
+    // If playing, add to current step (live recording)
+    if (window.isPlaying) {
+        const step = window.currentStep;
+        const existing = window.drumTrack.events.find(ev => ev.step === step && ev.soundIndex === soundIndex);
+        if (!existing) {
+            window.drumTrack.events.push({ step, soundIndex });
+            // Update UI
+            const button = document.querySelector(`.drum-step[data-sound="${soundIndex}"][data-step="${step}"]`);
+            if (button) {
+                button.classList.add('active');
+            }
+        }
+    }
 };
 
 // Initialize drum grid
@@ -96,4 +109,14 @@ window.toggleDrumStep = function(e) {
         window.drumTrack.events.push({ step, soundIndex: sound });
         e.target.classList.add('active');
     }
+};
+
+// Clear sequencer
+window.clearSequencer = function() {
+    // Clear events
+    window.drumTrack.events = [];
+    // Clear UI
+    document.querySelectorAll('.drum-step.active').forEach(step => {
+        step.classList.remove('active');
+    });
 };

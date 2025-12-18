@@ -50,8 +50,19 @@ button:hover {
     background-color: #45a049;
 }
 
-#bpm-slider {
-    width: 12.5em;
+#clear-sequencer {
+    padding: 0.625em;
+    min-width: 3.125em;
+    background-color: #ddd;
+    border: none;
+    border-radius: 5px;
+    font-size: 1.2em;
+    cursor: pointer;
+    transition: background-color 0.1s;
+}
+
+#clear-sequencer:hover {
+    background-color: #bbb;
 }
 
 #bar-selector {
@@ -68,13 +79,9 @@ button:hover {
     font-size: 1.2em;
 }
 
-.bar-btn[data-bars="4"] {
-    background-color: #9C27B0; /* Purple for 4 bars */
+.bar-btn.active {
+    background-color: #9C27B0;
     color: white;
-}
-
-.bar-btn[data-bars="4"].active {
-    background-color: #7B1FA2; /* Darker purple */
 }
 
 #tabs {
@@ -199,7 +206,7 @@ button:hover {
     bottom: 0;
     left: 50%;
     transform: translateX(-50%);
-    width: auto;
+    width: 100%;
     max-width: 800px;
     height: auto;
     max-height: 12em;
@@ -217,5 +224,4 @@ button:hover {
     display: flex;
     margin-bottom: 0.1em;
     overflow-x: auto;
-    padding-bottom: 0em;
-}
+    padding-bottom: 0em;    justify-content: center;}
