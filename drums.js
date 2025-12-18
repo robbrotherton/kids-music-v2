@@ -25,8 +25,9 @@ window.initDrumPads = function() {
 // Play drum pad
 window.playDrumPad = function(e) {
     const soundIndex = parseInt(e.target.dataset.sound);
-    if (window.drumSounds[soundIndex]) {
-        window.drumSounds[soundIndex].triggerAttackRelease('C2', '8n');
+    const notes = ['C2', 'D2', 'E2', 'F2'];
+    if (window.drumSampler) {
+        window.drumSampler.triggerAttackRelease(notes[soundIndex], '8n');
     }
     // If playing, add to current step (live recording)
     if (window.isPlaying) {

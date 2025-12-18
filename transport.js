@@ -73,8 +73,9 @@ window.setupTransportSchedule = function() {
         // Drums
         if (window.drumTrack.enabled) {
             window.drumTrack.events.forEach(event => {
-                if (event.step === value.step && window.drumSounds[event.soundIndex]) {
-                    window.drumSounds[event.soundIndex].triggerAttackRelease('C2', '8n', time);
+                if (event.step === value.step && window.drumSampler) {
+                    const notes = ['C2', 'D2', 'E2', 'F2'];
+                    window.drumSampler.triggerAttackRelease(notes[event.soundIndex], time);
                 }
             });
         }
