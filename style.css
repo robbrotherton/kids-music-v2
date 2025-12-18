@@ -1,0 +1,221 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f0f0f0;
+    color: #333;
+    touch-action: manipulation;
+}
+
+#app {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 1.25em;
+    position: relative;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+h1 {
+    font-size: 2em;
+    margin: 0;
+}
+
+#transport {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+button {
+    /* font-size: 1.2; */
+    /* padding: 0.625em 1.25em; */
+    border: none;
+    border-radius: 5px;
+    background-color: #4CAF50;
+    color: white;
+    cursor: pointer;
+    /* min-height: 3.125em; */
+    /* min-width: 5em; */
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+#bpm-slider {
+    width: 12.5em;
+}
+
+#bar-selector {
+    display: flex;
+    gap: 0.3125em;
+}
+
+.bar-btn {
+    padding: 0.625em;
+    min-width: 3.125em;
+    background-color: #ddd;
+    border: none;
+    border-radius: 5px;
+    font-size: 1.2em;
+}
+
+.bar-btn[data-bars="4"] {
+    background-color: #9C27B0; /* Purple for 4 bars */
+    color: white;
+}
+
+.bar-btn[data-bars="4"].active {
+    background-color: #7B1FA2; /* Darker purple */
+}
+
+#tabs {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.tab {
+    flex: 1;
+    padding: 0.9375em;
+    background-color: #ddd;
+    border: none;
+    font-size: 1.2em;
+    min-height: 3.75em;
+}
+
+.tab.active {
+    background-color: #bbb;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+#drum-pads {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25em;
+    margin: 1.25em 0;
+    max-width: 25em;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.drum-pad {
+    aspect-ratio: 1;
+    border: 2px solid #ccc;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1.5em;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 5em;
+    transition: background-color 0.1s;
+}
+
+.drum-pad:active {
+    transform: scale(0.95);
+}
+
+/* Colors for drum pads */
+.drum-pad:nth-child(1) {
+    background-color: #FF6B7A; /* Red for kick */
+    color: white;
+}
+
+.drum-pad:nth-child(2) {
+    background-color: #FFFF6B; /* Yellow for snare */
+    color: black;
+}
+
+.drum-pad:nth-child(3) {
+    background-color: #6BB8FF; /* Blue for hat */
+    color: white;
+}
+
+.drum-pad:nth-child(4) {
+    background-color: #6BFF6B; /* Green for open hat */
+    color: white;
+}
+
+.drum-row {
+    display: contents;
+}
+
+.drum-step {
+    flex-shrink: 0;
+    border: 1px solid #ccc;
+    background-color: white;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.1s;
+}
+
+/* Beat columns: 0, 4, 8, 12 (every 4th starting from 1) */
+.drum-step:nth-child(4n+1) {
+    border: 2px solid black;
+}
+
+.drum-step.current {
+    border: 2px solid #f44336;
+    box-shadow: 0 0 5px #f44336;
+}
+
+/* Different colors for drum rows - active states */
+.sound-0.active {
+    background-color: #FF6B7A; /* Red for kick */
+}
+
+.sound-1.active {
+    background-color: #FFFF6B; /* Yellow for snare */
+    color: black; /* For visibility if needed */
+}
+
+.sound-2.active {
+    background-color: #6BB8FF; /* Blue for hat */
+}
+
+.sound-3.active {
+    background-color: #6BFF6B; /* Green for open hat */
+}
+
+#drum-grid {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+    max-width: 800px;
+    height: auto;
+    max-height: 12em;
+    background: white;
+    /* border-top: 2px solid #333; */
+    border-radius: 10px 10px 0 0;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    overflow-x: auto;
+    overflow-y: auto;
+    padding: 1em;
+    box-sizing: border-box;
+}
+
+.drum-row {
+    display: flex;
+    margin-bottom: 0.1em;
+    overflow-x: auto;
+    padding-bottom: 0em;
+}
