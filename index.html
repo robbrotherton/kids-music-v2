@@ -8,6 +8,7 @@
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
     <link rel="stylesheet" href="style.css">
+        <link rel="stylesheet" href="wave-selector.css">
 </head>
 
 <body>
@@ -26,12 +27,7 @@
                 <h3>Bass Controls</h3>
                 <div class="control-row">
                     <label>Wave Type</label>
-                    <select id="bass-wave-type">
-                        <option value="sine">Sine</option>
-                        <option value="triangle">Triangle</option>
-                        <option value="square">Square</option>
-                        <option value="sawtooth">Sawtooth</option>
-                    </select>
+                    <wave-selector id="bass-wave-type" value="sawtooth"></wave-selector>
                 </div>
                 <!-- Volume, Filter, Resonance moved into Effects row as Tone group -->
                 <div class="control-row">
@@ -225,6 +221,7 @@
 <script src="bass.js"></script>
 <script src="ui.js"></script>
 <script src="knob.js"></script>
+<script src="wave-selector.js"></script>
 <script src="controls.js"></script>
 <script src="main.js"></script>
 

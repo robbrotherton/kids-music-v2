@@ -54,10 +54,12 @@ window.initBassControls = function() {
     // Wave type
     const waveSelect = document.getElementById('bass-wave-type');
     if (waveSelect) {
-        waveSelect.value = window.controlState.bass.waveType;
+        try { waveSelect.value = window.controlState.bass.waveType; } catch(e){}
         waveSelect.addEventListener('change', (e) => {
-            window.controlState.bass.waveType = e.target.value;
-            window.bassSynth.oscillator.type = e.target.value;
+            // some events may not provide target.value, support component's property
+            const val = (e.target && e.target.value) || waveSelect.value || waveSelect.getAttribute('value');
+            window.controlState.bass.waveType = val;
+            try { window.bassSynth.oscillator.type = val; } catch (err) {}
         });
     }
 
