@@ -201,6 +201,11 @@ window.initTabs = function() {
             }
         });
     });
+    
+    // Activate first tab by default
+    if (tabs.length > 0) {
+        tabs[0].click();
+    }
 };
 
 // Event listeners
