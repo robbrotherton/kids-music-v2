@@ -72,6 +72,8 @@ window.createSynthChain = function(synth) {
     const chain = {
         filter: new Tone.Filter({ frequency: 2000, Q: 1 }),
         volume: new Tone.Volume(0),
+        // per-wave base gain (applied before user volume)
+        waveGain: new Tone.Volume(0),
         vibrato: new Tone.Vibrato({ frequency: 5, depth: 0 }),
         // Tremolo implemented as an LFO controlling a Gain node so depth=1 => silence
         tremoloGain: new Tone.Gain(1),
@@ -94,11 +96,13 @@ window.createSynthChain = function(synth) {
     chain.tremoloLFO.connect(chain.tremoloGain.gain);
 
     // Connect synth through effects (simplified chain)
+    // Order: vibrato -> filter -> tremolo -> wah -> waveGain (per-wave) -> user volume -> global effects
     synth.chain(
         chain.vibrato,
         chain.filter,
         chain.tremoloGain,
         chain.wahFilter,
+        chain.waveGain,
         chain.volume,
         window.globalEffectsInput
     );
