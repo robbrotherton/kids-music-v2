@@ -497,24 +497,23 @@ body {
     margin-bottom: 4px; /* tighter spacing so title sits closer to knob */
     text-transform: none;
 }
-.effect-subtitles {
-    display: flex;
-    gap: 10px;
-    width: 100%;
-    justify-content: center;
-    margin-top: 6px; /* put subs slightly below knobs */
-}
-.effect-subtitles .sub {
-    flex: 1;
-    text-align: center;
-    font-size: 11px;
-    color: #666;
-}
 .knob-row {
     display: flex;
-    gap: 18px; /* fixed gap between knobs inside a group */
+    gap: 10px; /* fixed gap between knobs inside a group */
     justify-content: center;
     width: 100%;
 }
-.knob-block { display:flex; align-items:center; justify-content:center; flex: 0 0 auto; }
+.knob-block {
+    display:flex;
+    flex-direction: column;
+    align-items:center;
+    justify-content:flex-start;
+    gap:6px;
+    flex: 0 0 auto;
+}
+.knob-block .sub {
+    font-size: 11px;
+    color: #666;
+    text-align: center;
+}
 .knob-block .knob { margin: 0 auto; }
