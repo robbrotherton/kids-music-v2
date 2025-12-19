@@ -1,5 +1,14 @@
 // ui.js - UI interactions
 
+// Drag selection state for monophonic tracks
+window.dragState = {
+    isDragging: false,
+    startStep: null,
+    startNote: null,
+    currentStep: null,
+    currentNote: null
+};
+
 // Generic sequencer grid initialization
 window.initSequencerGrid = function(config) {
     const {
@@ -76,7 +85,32 @@ window.initSequencerGrid = function(config) {
             }
             if (isActive) stepBtn.classList.add('active');
 
-            stepBtn.addEventListener('click', toggleFunction);
+            // Attach event listeners
+            if (isPolyphonic) {
+                stepBtn.addEventListener('click', toggleFunction);
+            } else {
+                // Monophonic: support click for single toggle, drag for spans
+                stepBtn.addEventListener('mousedown', (e) => {
+                    window.dragState.isDragging = true;
+                    window.dragState.startStep = step;
+                    window.dragState.startNote = rowIndex;
+                    window.dragState.currentStep = step;
+                    window.dragState.currentNote = rowIndex;
+                });
+                stepBtn.addEventListener('mouseenter', (e) => {
+                    if (window.dragState.isDragging && window.dragState.startNote === rowIndex) {
+                        window.dragState.currentStep = step;
+                    }
+                });
+                stepBtn.addEventListener('mouseup', (e) => {
+                    if (window.dragState.isDragging) {
+                        const start = Math.min(window.dragState.startStep, window.dragState.currentStep);
+                        const end = Math.max(window.dragState.startStep, window.dragState.currentStep);
+                        toggleFunction(e, { startStep: start, endStep: end, noteIndex: rowIndex, cellClass });
+                        window.dragState.isDragging = false;
+                    }
+                });
+            }
 
             row.appendChild(stepBtn);
 
@@ -85,6 +119,13 @@ window.initSequencerGrid = function(config) {
             }
         }
         grid.appendChild(row);
+    }
+
+    // Global mouseup to handle drag end outside grid
+    if (!isPolyphonic) {
+        document.addEventListener('mouseup', () => {
+            window.dragState.isDragging = false;
+        });
     }
 };
 

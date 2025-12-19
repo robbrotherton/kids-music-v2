@@ -47,50 +47,54 @@ window.initBassKeyboard = function() {
     });
 };
 
-// Toggle bass step - now supports long notes
-window.toggleBassStep = function(e) {
-    const noteIndex = parseInt(e.target.dataset.note);
-    const step = parseInt(e.target.dataset.step);
+// Toggle bass step - now supports drag for spans and click for single notes
+window.toggleBassStep = function(e, spanData) {
+    let startStep, endStep, noteIndex;
     
-    // Check if there's already a note spanning this step
-    const existingEvent = window.bassTrack.events.find(event => 
-        event.startStep <= step && event.endStep >= step && event.noteIndex === noteIndex
+    if (spanData) {
+        // Drag selection: create span
+        ({ startStep, endStep, noteIndex, cellClass } = spanData);
+    } else {
+        // Single click: toggle individual cell
+        noteIndex = parseInt(e.target.dataset.note);
+        startStep = endStep = parseInt(e.target.dataset.step);
+    }
+    
+    // Remove any existing notes that overlap with this range on this note
+    window.bassTrack.events = window.bassTrack.events.filter(event => 
+        !(event.noteIndex === noteIndex && 
+          event.startStep <= endStep && 
+          event.endStep >= startStep)
     );
     
-    if (existingEvent) {
-        // Remove the entire note span
-        window.bassTrack.events = window.bassTrack.events.filter(event => event !== existingEvent);
+    // Check if the entire span is already active
+    const existingSpan = window.bassTrack.events.find(event => 
+        event.startStep === startStep && 
+        event.endStep === endStep && 
+        event.noteIndex === noteIndex
+    );
+    
+    if (existingSpan) {
+        // Remove the span
+        window.bassTrack.events = window.bassTrack.events.filter(event => event !== existingSpan);
         // Update UI for all steps in the span
-        for (let s = existingEvent.startStep; s <= existingEvent.endStep; s++) {
+        for (let s = startStep; s <= endStep; s++) {
             document.querySelectorAll(`.bass-step[data-step="${s}"][data-note="${noteIndex}"]`).forEach(btn => {
                 btn.classList.remove('active');
             });
         }
     } else {
-        // Check if we're extending an existing note
-        const adjacentStart = window.bassTrack.events.find(event => 
-            event.endStep === step - 1 && event.noteIndex === noteIndex
-        );
-        const adjacentEnd = window.bassTrack.events.find(event => 
-            event.startStep === step + 1 && event.noteIndex === noteIndex
-        );
-        
-        if (adjacentStart) {
-            // Extend the note forward
-            adjacentStart.endStep = step;
-            e.target.classList.add('active');
-        } else if (adjacentEnd) {
-            // Extend the note backward
-            adjacentEnd.startStep = step;
-            e.target.classList.add('active');
-        } else {
-            // Start a new note (for now, just 1 step - user can extend)
-            window.bassTrack.events.push({
-                startStep: step,
-                endStep: step,
-                noteIndex: noteIndex
+        // Add the new span
+        window.bassTrack.events.push({
+            startStep: startStep,
+            endStep: endStep,
+            noteIndex: noteIndex
+        });
+        // Update UI for all steps in the span
+        for (let s = startStep; s <= endStep; s++) {
+            document.querySelectorAll(`.bass-step[data-step="${s}"][data-note="${noteIndex}"]`).forEach(btn => {
+                btn.classList.add('active');
             });
-            e.target.classList.add('active');
         }
     }
 };

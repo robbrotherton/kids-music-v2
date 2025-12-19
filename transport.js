@@ -90,9 +90,11 @@ window.setupTransportSchedule = function() {
                 
                 // If this is a single-step note, use triggerAttackRelease
                 if (event.startStep === event.endStep) {
+                    console.log(`Bass single note: start=${event.startStep}, end=${event.endStep}, note=${window.bassNotes[event.noteIndex]}`);
                     window.bassSynth.triggerAttackRelease(freq, stepTime, time);
                 } else {
                     // Multi-step note: just attack, release will happen later
+                    console.log(`Bass span start: start=${event.startStep}, end=${event.endStep}, note=${window.bassNotes[event.noteIndex]}`);
                     window.bassSynth.triggerAttack(freq, time);
                 }
             });
@@ -102,6 +104,7 @@ window.setupTransportSchedule = function() {
                 event.endStep === value.step && event.startStep !== event.endStep
             );
             if (endingNotes.length > 0) {
+                console.log(`Bass span end: start=${endingNotes[0].startStep}, end=${endingNotes[0].endStep}, note=${window.bassNotes[endingNotes[0].noteIndex]}`);
                 // For monophonic bass, just release current note
                 window.bassSynth.triggerRelease(time + stepTime);
             }
