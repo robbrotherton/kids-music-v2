@@ -57,10 +57,11 @@ window.initDrumGrid = function() {
     for (let sound = 0; sound < window.drumSounds.length; sound++) {
         window.drumButtons[sound] = [];
         const row = document.createElement('div');
-        row.className = 'drum-row';
+        row.className = 'sequencer-row drum-row';
         for (let step = 0; step < window.drumTrack.lengthSteps; step++) {
             const stepBtn = document.createElement('button');
-            stepBtn.className = `drum-step sound-${sound}`;
+            stepBtn.className = `sequencer-cell drum-step sound-${sound}`;
+            if (step % 4 === 0) stepBtn.classList.add('beat');
             stepBtn.dataset.sound = sound;
             stepBtn.dataset.step = step;
             stepBtn.style.width = buttonSize + 'px';

@@ -16,7 +16,7 @@ window.initBassGrid = function() {
     grid.innerHTML = '';
     for (let noteIndex = 0; noteIndex < window.bassNotes.length; noteIndex++) {
         const row = document.createElement('div');
-        row.className = 'bass-row';
+        row.className = 'sequencer-row bass-row';
         row.style.display = 'flex';
         row.style.alignItems = 'center';
         const label = document.createElement('div');
@@ -27,7 +27,8 @@ window.initBassGrid = function() {
         row.appendChild(label);
         for (let step = 0; step < window.bassTrack.lengthSteps; step++) {
             const stepBtn = document.createElement('button');
-            stepBtn.className = 'bass-step';
+            stepBtn.className = 'sequencer-cell bass-step';
+            if (step % 4 === 0) stepBtn.classList.add('beat');
             stepBtn.dataset.note = noteIndex;
             stepBtn.dataset.step = step;
             stepBtn.addEventListener('click', window.toggleBassStep);
