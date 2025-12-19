@@ -233,6 +233,7 @@ button:hover {
     overflow-y: auto;
     padding: 1em;
     box-sizing: border-box;
+    display: none;
 }
 #bass-grid {
     position: absolute;
@@ -253,6 +254,12 @@ button:hover {
     box-sizing: border-box;
 }
 .drum-row {
+    display: flex;
+    margin-bottom: 0.1em;
+    overflow-x: auto;
+    padding-bottom: 0em;    justify-content: center;}
+
+.bass-row {
     display: flex;
     margin-bottom: 0.1em;
     overflow-x: auto;
