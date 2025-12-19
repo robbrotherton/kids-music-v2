@@ -4,7 +4,14 @@
 window.controlState = {
     // Bass controls
     bass: {
-        waveType: 'sawtooth',
+        waveType: 'sine',
+        // per-wave base gain (dB) applied in addition to user `volume` control
+        waveGainDb: {
+            sine: 20,
+            triangle: 9,
+            sawtooth: 0,
+            square: -6
+        },
         volume: 0, // dB
         filterFreq: 2000,
         filterQ: 1,
@@ -56,10 +63,30 @@ window.initBassControls = function() {
     if (waveSelect) {
         try { waveSelect.value = window.controlState.bass.waveType; } catch(e){}
         waveSelect.addEventListener('change', (e) => {
-            // some events may not provide target.value, support component's property
-            const val = (e.target && e.target.value) || waveSelect.value || waveSelect.getAttribute('value');
+            // some events may not provide target.value, support component's property or detail
+            const val = (e && (e.detail && e.detail.value)) || (e.target && e.target.value) || waveSelect.value || waveSelect.getAttribute('value');
             window.controlState.bass.waveType = val;
-            try { window.bassSynth.oscillator.type = val; } catch (err) {}
+            console.log('[controls] bass wave set to', val);
+            try { window.bassSynth.oscillator.type = val; } catch (err) { console.warn('[controls] could not set oscillator.type', err); }
+            // apply per-wave base gain (dB) plus user volume
+            try {
+                const baseDb = (window.controlState.bass.waveGainDb && window.controlState.bass.waveGainDb[val] !== undefined) ? window.controlState.bass.waveGainDb[val] : 0;
+                const targetDb = window.controlState.bass.volume + baseDb;
+                if (window.bassChain && window.bassChain.volume) {
+                    if (window.bassChain.volume.volume !== undefined && window.bassChain.volume.volume.value !== undefined) {
+                        window.bassChain.volume.volume.value = targetDb;
+                        console.log('[controls] applied volume (volume.volume.value)=', targetDb, 'for wave', val);
+                    } else if (window.bassChain.volume.value !== undefined) {
+                        window.bassChain.volume.value = targetDb;
+                        console.log('[controls] applied volume (volume.value)=', targetDb, 'for wave', val);
+                    } else if (typeof window.bassChain.volume === 'number') {
+                        window.bassChain.volume = targetDb;
+                        console.log('[controls] applied volume (number)=', targetDb, 'for wave', val);
+                    } else {
+                        console.warn('[controls] unknown bassChain.volume shape', window.bassChain.volume);
+                    }
+                }
+            } catch (err) { console.warn('[controls] error applying base wave gain', err); }
         });
     }
 
@@ -69,7 +96,19 @@ window.initBassControls = function() {
         volumeSlider.value = window.controlState.bass.volume;
         volumeSlider.addEventListener('input', (e) => {
             window.controlState.bass.volume = parseFloat(e.target.value);
-            window.bassChain.volume.volume.value = window.controlState.bass.volume;
+            try {
+                const baseDb = (window.controlState.bass.waveGainDb && window.controlState.bass.waveGainDb[window.controlState.bass.waveType] !== undefined) ? window.controlState.bass.waveGainDb[window.controlState.bass.waveType] : 0;
+                const targetDb = window.controlState.bass.volume + baseDb;
+                if (window.bassChain && window.bassChain.volume) {
+                    if (window.bassChain.volume.volume !== undefined && window.bassChain.volume.volume.value !== undefined) {
+                        window.bassChain.volume.volume.value = targetDb;
+                    } else if (window.bassChain.volume.value !== undefined) {
+                        window.bassChain.volume.value = targetDb;
+                    } else if (typeof window.bassChain.volume === 'number') {
+                        window.bassChain.volume = targetDb;
+                    }
+                }
+            } catch (err) { console.warn('[controls] error setting volume from slider', err); }
         });
     }
 
@@ -297,7 +336,29 @@ window.initGlobalControls = function() {
 window.updateAllControls = function() {
     // Bass
     window.bassSynth.oscillator.type = window.controlState.bass.waveType;
-    window.bassChain.volume.volume.value = window.controlState.bass.volume;
+    // Apply per-wave base gain (dB) plus user volume
+    try {
+        const wave = window.controlState.bass.waveType;
+        const baseDb = (window.controlState.bass.waveGainDb && window.controlState.bass.waveGainDb[wave] !== undefined) ? window.controlState.bass.waveGainDb[wave] : 0;
+        const targetDb = window.controlState.bass.volume + baseDb;
+        if (window.bassChain && window.bassChain.volume) {
+            if (window.bassChain.volume.volume !== undefined && window.bassChain.volume.volume.value !== undefined) {
+                window.bassChain.volume.volume.value = targetDb;
+                console.log('[controls] init applied volume (volume.volume.value)=', targetDb, 'for wave', wave);
+            } else if (window.bassChain.volume.value !== undefined) {
+                window.bassChain.volume.value = targetDb;
+                console.log('[controls] init applied volume (volume.value)=', targetDb, 'for wave', wave);
+            } else if (typeof window.bassChain.volume === 'number') {
+                window.bassChain.volume = targetDb;
+                console.log('[controls] init applied volume (number)=', targetDb, 'for wave', wave);
+            } else {
+                console.warn('[controls] unknown bassChain.volume shape at init', window.bassChain.volume);
+            }
+        }
+    } catch (err) {
+        console.warn('[controls] error applying initial volume', err);
+        try { if (window.bassChain && window.bassChain.volume && window.bassChain.volume.volume) window.bassChain.volume.volume.value = window.controlState.bass.volume; } catch (e) {}
+    }
     window.bassChain.filter.frequency.value = window.controlState.bass.filterFreq;
     window.bassChain.filter.Q.value = window.controlState.bass.filterQ;
 

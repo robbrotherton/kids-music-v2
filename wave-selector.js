@@ -166,9 +166,8 @@
     }
 
     _dispatchChange(){
-      const ev = new Event('change', { bubbles: true });
-      // ensure target.value is available to listeners
-      ev.target = this;
+      // Dispatch a change event from the custom element with the new value
+      const ev = new CustomEvent('change', { bubbles: true, composed: true, detail: { value: this.value } });
       this.dispatchEvent(ev);
     }
 
