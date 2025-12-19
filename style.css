@@ -33,6 +33,7 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 200px;
+    /* width: 100%; */
 }
 
 #sequencer-area {
@@ -44,6 +45,7 @@ body {
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
     margin-top: 10px;
     overflow: hidden;
+    max-height: fit-content;
 }
 
 .sequencer-grid {
@@ -51,6 +53,7 @@ body {
     padding: 1em;
     box-sizing: border-box;
     display: none; /* Hidden by default, shown by JavaScript */
+    /* height: fit-content;; */
 }
 
 #transport {
@@ -80,6 +83,7 @@ body {
 
 .tab-content {
     display: none;
+    width: 100%;
 }
 
 .tab-content.active {
@@ -147,12 +151,14 @@ body {
     color: white;
 }
 
+
 /* Piano keyboard styles */
 .piano-keyboard {
-    padding: 10px;
+    /* padding: 10px; */
     background-color: #2c2c2c;
     border-radius: 8px;
-    margin: 10px 0;
+    /* border: 1px solid red; */
+    /* margin: 10px 0; */
 }
 
 .piano-keyboard .keys-container {
@@ -161,6 +167,7 @@ body {
     position: relative;
     width: 100%;
     height: 120px;
+    /* padding: 10px; */
 }
 
 .piano-keyboard .white-key {
@@ -221,6 +228,11 @@ body {
 .piano-keyboard .black-key[data-note$="A#3"],
 .piano-keyboard .black-key[data-note$="A#4"] {
     left: calc(100% / 7 * 5.85);
+}
+
+#bass-keyboard {
+    background: black;
+    border-radius: 5px;
 }
 
 #drum-pads {
