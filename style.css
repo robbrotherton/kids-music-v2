@@ -483,18 +483,113 @@ body {
 /* Global effects grouped row */
 .effects-row {
     display: flex;
-    gap: 18px;
-    align-items: flex-end; /* align knobs to the bottom of the row */
+    gap: 12px; /* tighten gaps so more groups fit horizontally */
+    align-items: flex-start; /* align group tops so titles line up */
     justify-content: space-between;
     flex-wrap: nowrap; /* keep groups on one horizontal row */
 }
 .effect-group {
     flex: 1 1 0;
-    min-width: 120px;
+    min-width: 100px;
     display: flex;
     flex-direction: column;
     align-items: center;
 }
+
+/* Compact groups (single small control like wave visual or solo volume) */
+.effect-group.compact {
+    flex: 0 0 auto;
+    min-width: 0; /* allow shrinking to fit content */
+    width: auto;  /* fit content width */
+    padding: 0 4px;
+    align-self: center; /* vertically center this group within the effects row */
+}
+.effect-group.compact .knob-row {
+    gap: 6px;
+}
+.effect-group.compact .effect-title {
+    margin-bottom: 6px;
+}
+
+/* Mod Shape vertical toggle styles */
+.mod-toggle {
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+}
+.mod-toggle .mod-icon {
+    width:18px;
+    height:18px;
+    opacity:0.7;
+}
+.mod-toggle .mod-icon.top { margin-bottom: 2px; }
+.mod-toggle .mod-icon.bottom { margin-top: 2px; }
+.switch-vertical { display:flex; align-items:center; justify-content:center; }
+.switch-vertical input { position:absolute; opacity:0; width:0; height:0; }
+.slider-vertical {
+    width:18px;
+    height:36px;
+    background:#e6e6e6;
+    border-radius:10px;
+    position:relative;
+    display:inline-block;
+}
+.slider-vertical::before{
+    content:"";
+    position:absolute;
+    left:50%;
+    transform:translate(-50%, 0);
+    top:6px;
+    width:12px;
+    height:12px;
+    background:#4a90e2;
+    border-radius:50%;
+    transition:transform 0.12s ease;
+}
+.switch-vertical input:checked + .slider-vertical::before{
+    transform:translate(-50%, 18px);
+}
+/* When active (square), dim the top icon and highlight bottom; JS will toggle `active-square` on .mod-toggle */
+.mod-toggle.active-square .mod-icon.top { opacity:0.35; }
+.mod-toggle.active-square .mod-icon.bottom { opacity:1; filter: drop-shadow(0 0 4px rgba(74,144,226,0.25)); }
+.mod-toggle:not(.active-square) .mod-icon.top { opacity:1; filter: drop-shadow(0 0 4px rgba(74,144,226,0.25)); }
+.mod-toggle:not(.active-square) .mod-icon.bottom { opacity:0.35; }
+
+/* Smaller sizing when inside a compact group */
+.effect-group.compact .mod-toggle { gap:4px; }
+.effect-group.compact .mod-toggle .mod-icon { width:14px; height:14px; }
+.effect-group.compact .slider-vertical { width:14px; height:28px; }
+.effect-group.compact .slider-vertical::before { width:10px; height:10px; top:5px; }
+.effect-group.compact .switch-vertical input:checked + .slider-vertical::before { transform:translate(-50%, 14px); }
+
+/* Cluster for modulation-related controls (vib, trem, wah, mod-shape)
+   Allows tighter gaps and independent alignment inside the main effects row */
+.effects-cluster {
+    display: flex;
+    gap: 10px; /* slightly tighter than outer groups */
+    align-items: center; /* vertically center group contents */
+    border: 1px solid black;
+    border-radius: 5px; 
+    padding: 5px;
+}
+.effects-cluster .effect-group {
+    flex: 0 0 auto;
+    min-width: 0;
+}
+.effects-cluster .effect-group .knob-row { gap: 6px; }
+.effects-cluster .effect-group .knob-block { max-width: 72px; }
+.effects-cluster .effect-group.compact { padding: 0 2px; }
+
+/* Tone cluster groups Volume + Tone together for compact horizontal layout */
+.tone-cluster {
+    display:flex;
+    gap:10px;
+    align-items:center;
+}
+.tone-cluster .effect-group { flex: 0 0 auto; min-width:0; }
+.tone-cluster .effect-group.compact { padding:0 4px; }
+.tone-cluster .knob-block { max-width:72px; }
 .effect-title {
     font-size: 13px;
     font-weight: 600;
@@ -504,7 +599,7 @@ body {
 }
 .knob-row {
     display: flex;
-    gap: 10px; /* fixed gap between knobs inside a group */
+    gap: 8px; /* fixed gap between knobs inside a group */
     justify-content: center;
     width: 100%;
 }
@@ -515,6 +610,11 @@ body {
     justify-content:flex-start;
     gap:6px;
     flex: 0 0 auto;
+    max-width: 84px; /* limit knob block width to pack more controls */
+}
+.knob-block > wave-selector {
+    width: 60px; /* force compact wave visual to stay narrow */
+    margin: 0 auto;
 }
 .knob-block .sub {
     font-size: 11px;

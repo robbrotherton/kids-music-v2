@@ -225,20 +225,46 @@ window.initGlobalControls = function() {
     });
 
     // Modulation shape (affects vibrato, tremolo, wah LFO)
-    const modShapeSelect = document.getElementById('global-mod-shape');
-    if (modShapeSelect) {
-        modShapeSelect.value = window.controlState.global.modShape;
-        modShapeSelect.addEventListener('change', (e) => {
-            window.controlState.global.modShape = e.target.value;
-            const t = e.target.value;
-            // Apply to existing chains safely
-            if (window.bassChain) {
-                try { if (window.bassChain.vibrato) window.bassChain.vibrato.type = t; } catch (err) {}
-                try { if (window.bassChain.vibrato && window.bassChain.vibrato.oscillator) window.bassChain.vibrato.oscillator.type = t; } catch (err) {}
-                try { if (window.bassChain.tremoloLFO) window.bassChain.tremoloLFO.type = t; } catch (err) {}
-                try { if (window.bassChain.wahLFO) window.bassChain.wahLFO.type = t; } catch (err) {}
+    const modShapeEl = document.getElementById('global-mod-shape');
+    if (modShapeEl) {
+        // If it's a checkbox toggle we map: unchecked -> 'sine', checked -> 'square'
+        if (modShapeEl.type === 'checkbox') {
+            try { modShapeEl.checked = (window.controlState.global.modShape === 'square'); } catch (e) {}
+            // Visual helper: toggle class on the parent .mod-toggle for icon highlighting
+            function updateModToggleVisual(el) {
+                try {
+                    const root = el.closest('.mod-toggle');
+                    if (!root) return;
+                    if (el.checked) root.classList.add('active-square'); else root.classList.remove('active-square');
+                } catch (err) {}
             }
-        });
+            try { updateModToggleVisual(modShapeEl); } catch (e) {}
+            modShapeEl.addEventListener('change', (e) => {
+                const val = e.target.checked ? 'square' : 'sine';
+                window.controlState.global.modShape = val;
+                const t = val;
+                try { updateModToggleVisual(e.target); } catch (err) {}
+                if (window.bassChain) {
+                    try { if (window.bassChain.vibrato) window.bassChain.vibrato.type = t; } catch (err) {}
+                    try { if (window.bassChain.vibrato && window.bassChain.vibrato.oscillator) window.bassChain.vibrato.oscillator.type = t; } catch (err) {}
+                    try { if (window.bassChain.tremoloLFO) window.bassChain.tremoloLFO.type = t; } catch (err) {}
+                    try { if (window.bassChain.wahLFO) window.bassChain.wahLFO.type = t; } catch (err) {}
+                }
+            });
+        } else {
+            // Fallback for older select-based control
+            try { modShapeEl.value = window.controlState.global.modShape; } catch (e) {}
+            modShapeEl.addEventListener('change', (e) => {
+                window.controlState.global.modShape = e.target.value;
+                const t = e.target.value;
+                if (window.bassChain) {
+                    try { if (window.bassChain.vibrato) window.bassChain.vibrato.type = t; } catch (err) {}
+                    try { if (window.bassChain.vibrato && window.bassChain.vibrato.oscillator) window.bassChain.vibrato.oscillator.type = t; } catch (err) {}
+                    try { if (window.bassChain.tremoloLFO) window.bassChain.tremoloLFO.type = t; } catch (err) {}
+                    try { if (window.bassChain.wahLFO) window.bassChain.wahLFO.type = t; } catch (err) {}
+                }
+            });
+        }
     }
 
     // Reverb
