@@ -132,7 +132,35 @@ window.initBassControls = function() {
             slider.value = window.controlState.bass[stateKey];
             slider.addEventListener('input', (e) => {
                 window.controlState.bass[stateKey] = parseFloat(e.target.value);
-                window.bassChain[effect][param] = window.controlState.bass[stateKey];
+                // Map controls to actual effect properties safely
+                const v = window.controlState.bass[stateKey];
+                if (effect === 'vibrato' && window.bassChain && window.bassChain.vibrato) {
+                    if (param === 'depth' && window.bassChain.vibrato.depth !== undefined) {
+                        try { window.bassChain.vibrato.depth.value = v; } catch (err) { window.bassChain.vibrato.depth = v; }
+                    }
+                    if (param === 'frequency' && window.bassChain.vibrato.frequency !== undefined) {
+                        try { window.bassChain.vibrato.frequency.value = v; } catch (err) { window.bassChain.vibrato.frequency = v; }
+                    }
+                } else if (effect === 'tremolo' && window.bassChain && window.bassChain.tremolo) {
+                    if (param === 'depth' && window.bassChain.tremolo.depth !== undefined) {
+                        try { window.bassChain.tremolo.depth.value = v; } catch (err) { window.bassChain.tremolo.depth = v; }
+                    }
+                    if (param === 'frequency' && window.bassChain.tremolo.frequency !== undefined) {
+                        try { window.bassChain.tremolo.frequency.value = v; } catch (err) { window.bassChain.tremolo.frequency = v; }
+                    }
+                } else if (effect === 'wah' && window.bassChain && window.bassChain.wahLFO && window.bassChain.wahFilter) {
+                    // wahDepth -> adjust LFO min/max around center
+                    if (param === 'depth') {
+                        const center = 600;
+                        const range = 600; // +/- range
+                        window.bassChain.wahLFO.min = Math.max(50, center - v * range);
+                        window.bassChain.wahLFO.max = Math.min(5000, center + v * range);
+                    }
+                    // wahRate -> set LFO rate
+                    if (param === 'gain') {
+                        try { window.bassChain.wahLFO.frequency.value = v; } catch (err) { window.bassChain.wahLFO.frequency = v; }
+                    }
+                }
             });
         }
     });
@@ -231,12 +259,24 @@ window.updateAllControls = function() {
     // window.bassChain.filterEnvelope.sustain = window.controlState.bass.filterSustain;
     // window.bassChain.filterEnvelope.release = window.controlState.bass.filterRelease;
 
-    window.bassChain.vibrato.depth = window.controlState.bass.vibratoDepth;
-    window.bassChain.vibrato.frequency = window.controlState.bass.vibratoRate;
-    window.bassChain.tremolo.depth = window.controlState.bass.tremoloDepth;
-    window.bassChain.tremolo.frequency = window.controlState.bass.tremoloRate;
-    window.bassChain.wah.depth = window.controlState.bass.wahDepth;
-    window.bassChain.wah.gain = window.controlState.bass.wahRate;
+    if (window.bassChain) {
+        if (window.bassChain.vibrato) {
+            try { window.bassChain.vibrato.depth.value = window.controlState.bass.vibratoDepth; } catch (e) { window.bassChain.vibrato.depth = window.controlState.bass.vibratoDepth; }
+            try { window.bassChain.vibrato.frequency.value = window.controlState.bass.vibratoRate; } catch (e) { window.bassChain.vibrato.frequency = window.controlState.bass.vibratoRate; }
+        }
+        if (window.bassChain.tremolo) {
+            try { window.bassChain.tremolo.depth.value = window.controlState.bass.tremoloDepth; } catch (e) { window.bassChain.tremolo.depth = window.controlState.bass.tremoloDepth; }
+            try { window.bassChain.tremolo.frequency.value = window.controlState.bass.tremoloRate; } catch (e) { window.bassChain.tremolo.frequency = window.controlState.bass.tremoloRate; }
+        }
+        if (window.bassChain.wahLFO && window.bassChain.wahFilter) {
+            const v = window.controlState.bass.wahDepth;
+            const center = 600;
+            const range = 600;
+            window.bassChain.wahLFO.min = Math.max(50, center - v * range);
+            window.bassChain.wahLFO.max = Math.min(5000, center + v * range);
+            try { window.bassChain.wahLFO.frequency.value = window.controlState.bass.wahRate; } catch (e) { window.bassChain.wahLFO.frequency = window.controlState.bass.wahRate; }
+        }
+    }
 
     // Global
     window.globalEffects.distortion.distortion = window.controlState.global.distortion;

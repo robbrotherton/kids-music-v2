@@ -74,15 +74,25 @@ window.createSynthChain = function(synth) {
         volume: new Tone.Volume(0),
         vibrato: new Tone.Vibrato({ frequency: 5, depth: 0 }),
         tremolo: new Tone.Tremolo({ frequency: 5, depth: 0 }),
-        wah: new Tone.AutoWah({ baseFrequency: 400, octaves: 4, sensitivity: 0, Q: 2 })
+        // Replace AutoWah with a simple LFO-driven bandpass (wah)
+        wahFilter: new Tone.Filter({ type: 'bandpass', frequency: 600, Q: 6 }),
+        wahLFO: new Tone.LFO(5, 200, 2000) // rate, min, max will be adjusted by controls
     };
+
+    // Start LFOs where needed
+    try { chain.vibrato.start(); } catch (e) {}
+    try { chain.tremolo.start(); } catch (e) {}
+    chain.wahLFO.start();
+
+    // Connect wah LFO to wahFilter frequency
+    chain.wahLFO.connect(chain.wahFilter.frequency);
 
     // Connect synth through effects (simplified chain)
     synth.chain(
         chain.vibrato,
         chain.filter,
         chain.tremolo,
-        chain.wah,
+        chain.wahFilter,
         chain.volume,
         window.globalEffectsInput
     );
