@@ -436,3 +436,50 @@ body {
 #bass-keyboard {
     padding: 10px;
 }
+
+/* Knob control styles */
+.knob {
+    width: 48px;
+    height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    background: transparent;
+}
+.knob-root { cursor: grab; }
+.knob-root:active { cursor: grabbing; }
+.knob-face {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(180deg,#fff,#e6e6e6);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+.knob-indicator {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 3px;
+    height: 12px;
+    background: #333;
+    border-radius: 2px;
+    transform-origin: 50% 50%;
+    transition: transform 0.02s linear;
+    pointer-events: none;
+    transform: rotate(0deg) translateY(0);
+}
+.knob-label {
+    position: absolute;
+    top: 50px;
+    width: 100%;
+    text-align: center;
+    font-size: 11px;
+    color: #333;
+}
+
+.control-row .knob { margin-right: 8px; }
