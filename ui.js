@@ -64,12 +64,15 @@ window.initSequencerGrid = function(config) {
                 stepBtn.style.height = buttonSize + 'px';
             }
 
-            // Check if active
+            // Check if active - handle both discrete steps and note spans
             let isActive = false;
             if (isPolyphonic) {
                 isActive = track.events.some(ev => ev.step === step && ev.soundIndex === rowIndex);
             } else {
-                isActive = track.events.some(ev => ev.step === step && ev.noteIndex === rowIndex);
+                // For monophonic tracks, check if this step falls within any note span
+                isActive = track.events.some(ev => 
+                    ev.startStep <= step && ev.endStep >= step && ev.noteIndex === rowIndex
+                );
             }
             if (isActive) stepBtn.classList.add('active');
 

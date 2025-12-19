@@ -59,6 +59,7 @@ window.updateBPM = function() {
 // Schedule repeat - will be set up after tracks are defined
 window.setupTransportSchedule = function() {
     const events = [];
+    const stepTime = Tone.Time("16n").toSeconds();
     for (let step = 0; step < window.drumTrack.lengthSteps; step++) {
         events.push({
             time: `0:0:${step}`,
@@ -80,14 +81,30 @@ window.setupTransportSchedule = function() {
                 }
             });
         }
-        // Bass
-        if (window.bassTrack.enabled) {
-            window.bassTrack.events.forEach(event => {
-                if (event.step === value.step && window.bassSynth) {
-                    const freq = Tone.Frequency(window.bassNotes[event.noteIndex]).toFrequency();
-                    window.bassSynth.triggerAttackRelease(freq, '16n', time);
+        // Bass - handle long notes
+        if (window.bassTrack.enabled && window.bassSynth) {
+            // Check for notes that should start on this step
+            const startingNotes = window.bassTrack.events.filter(event => event.startStep === value.step);
+            startingNotes.forEach(event => {
+                const freq = Tone.Frequency(window.bassNotes[event.noteIndex]).toFrequency();
+                
+                // If this is a single-step note, use triggerAttackRelease
+                if (event.startStep === event.endStep) {
+                    window.bassSynth.triggerAttackRelease(freq, stepTime, time);
+                } else {
+                    // Multi-step note: just attack, release will happen later
+                    window.bassSynth.triggerAttack(freq, time);
                 }
             });
+            
+            // Check for notes that should end on this step (only for multi-step notes)
+            const endingNotes = window.bassTrack.events.filter(event => 
+                event.endStep === value.step && event.startStep !== event.endStep
+            );
+            if (endingNotes.length > 0) {
+                // For monophonic bass, just release current note
+                window.bassSynth.triggerRelease(time + stepTime);
+            }
         }        // Highlight bass current step
         window.highlightCurrentStep('.bass-step', value.step, window.previousBassStep);
         window.previousBassStep = value.step;
