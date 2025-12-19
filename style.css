@@ -473,13 +473,48 @@ body {
     pointer-events: none;
     transform: rotate(0deg) translateY(0);
 }
-.knob-label {
-    position: absolute;
-    top: 50px;
+.control-row .knob { margin-right: 8px; }
+
+/* Global effects grouped row */
+.effects-row {
+    display: flex;
+    gap: 18px;
+    align-items: flex-end; /* align knobs to the bottom of the row */
+    justify-content: space-between;
+    flex-wrap: nowrap; /* keep groups on one horizontal row */
+}
+.effect-group {
+    flex: 1 1 0;
+    min-width: 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.effect-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 4px; /* tighter spacing so title sits closer to knob */
+    text-transform: none;
+}
+.effect-subtitles {
+    display: flex;
+    gap: 10px;
     width: 100%;
+    justify-content: center;
+    margin-top: 6px; /* put subs slightly below knobs */
+}
+.effect-subtitles .sub {
+    flex: 1;
     text-align: center;
     font-size: 11px;
-    color: #333;
+    color: #666;
 }
-
-.control-row .knob { margin-right: 8px; }
+.knob-row {
+    display: flex;
+    gap: 18px; /* fixed gap between knobs inside a group */
+    justify-content: center;
+    width: 100%;
+}
+.knob-block { display:flex; align-items:center; justify-content:center; flex: 0 0 auto; }
+.knob-block .knob { margin: 0 auto; }

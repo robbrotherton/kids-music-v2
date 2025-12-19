@@ -32,9 +32,7 @@
         const face = document.createElement('div'); face.className = 'knob-face';
         const ind = document.createElement('div'); ind.className = 'knob-indicator';
         face.appendChild(ind);
-        const label = document.createElement('div'); label.className = 'knob-label';
         el.appendChild(face);
-        el.appendChild(label);
 
         el._min = min; el._max = max; el._step = step; el._value = value;
 
@@ -48,7 +46,6 @@
             // center the indicator (translate -50%,-50%), then rotate and translate outward to rim
             ind.style.transform = `translate(-50%,-50%) rotate(${ang}deg) translateY(-${radius}px)`;
             ind.style.transformOrigin = '50% 50%';
-            label.textContent = Number(el._value).toFixed( (el._step < 0.01) ? 3 : (el._step < 0.1 ? 2 : (el._step < 1 ? 2 : 0)) );
             el.setAttribute('aria-valuenow', String(el._value));
         }
 
