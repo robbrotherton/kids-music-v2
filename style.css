@@ -187,6 +187,35 @@ body {
     background-color: #2196F3;
 }
 
+/* Span styling: visually extend continuation cells leftwards using a pseudo-element
+   so layout (spacing) is not altered. The row allows overflow so the pseudo can
+   draw outside the cell bounds. */
+.sequencer-cell.span-start {
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+    position: relative;
+    z-index: 2;
+}
+.sequencer-cell.span-cont {
+    position: relative;
+    z-index: 2;
+}
+.sequencer-cell.span-cont::before {
+    content: '';
+    position: absolute;
+    left: -8px; /* visual extension width, does not affect layout */
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    background-color: inherit; /* will inherit the cell's background when active */
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    z-index: 3;
+}
+.sequencer-cell.span-start.active, .sequencer-cell.span-cont.active, .sequencer-cell.span-cont.active::before {
+    background-color: #2196F3;
+}
+
 .sequencer-cell.beat {
     border: 2px solid black;
 }
@@ -416,7 +445,7 @@ body {
 
 .sequencer-row {
     display: flex;
-    overflow-x: auto;
+    overflow-x: visible; /* allow span visuals to overflow without shifting layout */
     padding-bottom: 0em;
     justify-content: center;
 }

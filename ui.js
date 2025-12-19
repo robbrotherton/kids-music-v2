@@ -203,16 +203,38 @@ window.toggleSpanStep = function(e, spanData, config) {
         // Clear UI for all steps in the clicked range
         for (let s = startStep; s <= endStep; s++) {
             const selector = cellClass ? `.${cellClass}[data-step="${s}"][data-note="${noteIndex}"]` : `[data-step="${s}"][data-note="${noteIndex}"]`;
-            document.querySelectorAll(selector).forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll(selector).forEach(btn => {
+                btn.classList.remove('active');
+                btn.classList.remove('span-start');
+                btn.classList.remove('span-cont');
+            });
         }
         return;
     }
 
-    // No overlapping events -> add a new span
+    // No overlapping events for this note -> remove any events on other notes that overlap the range (monophonic behavior)
+    track.events = track.events.filter(ev => !(ev.startStep <= endStep && ev.endStep >= startStep));
+    // Clear UI active state for all notes in the affected step range
+    for (let s = startStep; s <= endStep; s++) {
+        const allSelector = cellClass ? `.${cellClass}[data-step="${s}"]` : `[data-step="${s}"]`;
+        document.querySelectorAll(allSelector).forEach(btn => {
+            btn.classList.remove('active');
+            btn.classList.remove('span-start');
+            btn.classList.remove('span-cont');
+        });
+    }
+    // Add the new span
     track.events.push({ startStep, endStep, [eventKey]: noteIndex });
     for (let s = startStep; s <= endStep; s++) {
         const selector = cellClass ? `.${cellClass}[data-step="${s}"][data-note="${noteIndex}"]` : `[data-step="${s}"][data-note="${noteIndex}"]`;
-        document.querySelectorAll(selector).forEach(btn => btn.classList.add('active'));
+        document.querySelectorAll(selector).forEach((btn, idx) => {
+            btn.classList.add('active');
+            if (s === startStep) {
+                btn.classList.add('span-start');
+            } else {
+                btn.classList.add('span-cont');
+            }
+        });
     }
 };
 
