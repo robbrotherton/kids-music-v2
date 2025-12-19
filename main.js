@@ -17,6 +17,8 @@ window.initApp = function() {
     console.log('Bass keyboard initialized');
     window.initTabs();
     console.log('Tabs initialized');
+    window.initControls();
+    console.log('Controls initialized');
     window.initEventListeners();
     console.log('Event listeners initialized');
     window.setupTransportSchedule();

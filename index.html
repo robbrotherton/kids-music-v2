@@ -20,6 +20,88 @@
             <button class="tab" data-tab="lead">Lead</button>
         </nav>
 
+        <!-- Controls panel -->
+        <div id="controls-panel">
+            <div class="controls-section">
+                <h3>Bass Controls</h3>
+                <div class="control-row">
+                    <label>Wave Type</label>
+                    <select id="bass-wave-type">
+                        <option value="sine">Sine</option>
+                        <option value="triangle">Triangle</option>
+                        <option value="square">Square</option>
+                        <option value="sawtooth">Sawtooth</option>
+                    </select>
+                </div>
+                <div class="control-row">
+                    <label>Volume</label>
+                    <input type="range" id="bass-volume" min="-60" max="0" step="1" value="0">
+                </div>
+                <div class="control-row">
+                    <label>Filter</label>
+                    <input type="range" id="bass-filter-freq" min="100" max="5000" step="10" value="2000">
+                </div>
+                <div class="control-row">
+                    <label>Resonance</label>
+                    <input type="range" id="bass-filter-q" min="0.1" max="10" step="0.1" value="1">
+                </div>
+                <div class="control-row">
+                    <label>Attack</label>
+                    <input type="range" id="bass-attack" min="0.001" max="1" step="0.001" value="0.01">
+                    <label>Decay</label>
+                    <input type="range" id="bass-decay" min="0.001" max="1" step="0.001" value="0.1">
+                    <label>Sustain</label>
+                    <input type="range" id="bass-sustain" min="0" max="1" step="0.01" value="0.8">
+                    <label>Release</label>
+                    <input type="range" id="bass-release" min="0.001" max="2" step="0.001" value="0.1">
+                </div>
+            </div>
+
+            <div class="controls-section">
+                <h3>Effects</h3>
+                <div class="control-row">
+                    <label>Vibrato Depth</label>
+                    <input type="range" id="bass-vibrato-depth" min="0" max="1" step="0.01" value="0">
+                    <label>Vibrato Rate</label>
+                    <input type="range" id="bass-vibrato-rate" min="0.1" max="20" step="0.1" value="5">
+                </div>
+                <div class="control-row">
+                    <label>Tremolo Depth</label>
+                    <input type="range" id="bass-tremolo-depth" min="0" max="1" step="0.01" value="0">
+                    <label>Tremolo Rate</label>
+                    <input type="range" id="bass-tremolo-rate" min="0.1" max="20" step="0.1" value="5">
+                </div>
+                <div class="control-row">
+                    <label>Wah Depth</label>
+                    <input type="range" id="bass-wah-depth" min="0" max="1" step="0.01" value="0">
+                    <label>Wah Rate</label>
+                    <input type="range" id="bass-wah-rate" min="0.1" max="20" step="0.1" value="5">
+                </div>
+            </div>
+
+            <div class="controls-section">
+                <h3>Global Effects</h3>
+                <div class="control-row">
+                    <label>Distortion</label>
+                    <input type="range" id="global-distortion" min="0" max="1" step="0.01" value="0">
+                </div>
+                <div class="control-row">
+                    <label>Delay Time</label>
+                    <input type="range" id="global-delay-time" min="0.01" max="1" step="0.01" value="0.3">
+                    <label>Delay Feedback</label>
+                    <input type="range" id="global-delay-feedback" min="0" max="0.9" step="0.01" value="0.3">
+                    <label>Delay Wet</label>
+                    <input type="range" id="global-delay-wet" min="0" max="1" step="0.01" value="0">
+                </div>
+                <div class="control-row">
+                    <label>Reverb Decay</label>
+                    <input type="range" id="global-reverb-decay" min="0.1" max="10" step="0.1" value="2.5">
+                    <label>Reverb Wet</label>
+                    <input type="range" id="global-reverb-wet" min="0" max="1" step="0.01" value="0.3">
+                </div>
+            </div>
+        </div>
+
         <!-- Main content area - shows pads, keyboard, etc. based on active tab -->
         <div id="content-area">
             <div id="drums" class="tab-content active">
@@ -71,6 +153,7 @@
 <script src="drums.js"></script>
 <script src="bass.js"></script>
 <script src="ui.js"></script>
+<script src="controls.js"></script>
 <script src="main.js"></script>
 
 </html>
