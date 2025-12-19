@@ -86,13 +86,18 @@
       let useCenterWarp = false;
       let centerWarpFactor = 0; // proportion toward center (0..1)
       let smallWarpFactor = 0; // small warp factor for other transitions
-      if (waveNames[prevIdx] === 'triangle' && waveNames[newIdx] === 'sawtooth') {
-        // move points toward center for triangle->saw (more natural morph)
+      // triangle <-> saw: use center warp, direction depends on prev->new
+      if ((waveNames[prevIdx] === 'triangle' && waveNames[newIdx] === 'sawtooth') ||
+          (waveNames[prevIdx] === 'sawtooth' && waveNames[newIdx] === 'triangle')) {
         useCenterWarp = true;
-        centerWarpFactor = 0.85; // 85% of the distance toward center at full ease
-      } else if (waveNames[prevIdx] === 'sine' && waveNames[newIdx] === 'square') {
-        // small subtle warp toward center for sine->square
+        centerWarpFactor = 0.85; // strength
+        // direction: 'in' means triangle->saw (points move toward center), 'out' means saw->triangle
+        var centerWarpDirection = (waveNames[prevIdx] === 'triangle' && waveNames[newIdx] === 'sawtooth') ? 'in' : 'out';
+      } else if ((waveNames[prevIdx] === 'sine' && waveNames[newIdx] === 'square') ||
+                 (waveNames[prevIdx] === 'square' && waveNames[newIdx] === 'sine')) {
+        // small subtle warp toward/away from center for sine<->square
         smallWarpFactor = 0.12;
+        var smallWarpDirection = (waveNames[prevIdx] === 'sine' && waveNames[newIdx] === 'square') ? 'in' : 'out';
       }
 
       const step = (now)=>{
@@ -102,12 +107,20 @@
         // positions of the top (b) and bottom (c) points toward center while
         // keeping their y positions fixed. This creates a smooth visual where
         // the zig-zag converges to a saw without vertical blending artifacts.
-        if (useCenterWarp && waveNames[prevIdx] === 'triangle' && waveNames[newIdx] === 'sawtooth') {
+        if (useCenterWarp && ( (waveNames[prevIdx] === 'triangle' && waveNames[newIdx] === 'sawtooth') || (waveNames[prevIdx] === 'sawtooth' && waveNames[newIdx] === 'triangle') ) ) {
           const N = this._samplesLen;
           const xA = 0.0, xD = 1.0;
           const xB0 = 1/3, xC0 = 2/3; // initial triangle point x positions
-          const xB = xB0 + (0.5 - xB0) * ease * centerWarpFactor; // move toward center
-          const xC = xC0 + (0.5 - xC0) * ease * centerWarpFactor;
+          let xB, xC;
+          if (typeof centerWarpDirection !== 'undefined' && centerWarpDirection === 'in') {
+            // triangle -> saw: move toward center
+            xB = xB0 + (0.5 - xB0) * ease * centerWarpFactor;
+            xC = xC0 + (0.5 - xC0) * ease * centerWarpFactor;
+          } else {
+            // saw -> triangle: move outward from center toward xB0/xC0
+            xB = 0.5 + (xB0 - 0.5) * ease * centerWarpFactor;
+            xC = 0.5 + (xC0 - 0.5) * ease * centerWarpFactor;
+          }
           const yA = 0, yB = 1, yC = -1, yD = 0;
           for (let i=0;i<N;i++){
             const s = i / (N - 1);
