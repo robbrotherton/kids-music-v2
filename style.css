@@ -574,7 +574,7 @@ body {
 }
 .adsr-item { display:flex; align-items:center; gap:8px; }
 .adsr-label { font-size:11px; color:#666; width:14px; text-align:center; }
-.adsr-item input[type="range"]{ width:64px; height:6px; -webkit-appearance:none; appearance:none; background:#ddd; border-radius:4px; }
+.adsr-item input[type="range"]{ width:56px; height:6px; -webkit-appearance:none; appearance:none; background:#ddd; border-radius:4px; }
 .adsr-item input[type="range"]::-webkit-slider-thumb{ appearance:none; width:12px; height:12px; background:#4a90e2; border-radius:50%; cursor:pointer; }
 .adsr-group { padding:0 6px; }
 .effect-group.compact.adsr-group { align-self:center; }
@@ -632,7 +632,7 @@ body {
     max-width: 84px; /* limit knob block width to pack more controls */
 }
 .knob-block > wave-selector {
-    width: 60px; /* force compact wave visual to stay narrow */
+    width: 54px; /* slightly narrower to tuck glide toggle into the row */
     margin: 0 auto;
 }
 .knob-block .sub {

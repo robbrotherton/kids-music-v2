@@ -52,6 +52,7 @@
                                 </div>
                             </div>
                         </div>
+                        <!-- Glide removed from here and moved into its own cluster for layout -->
                     </div>
 
                     <!-- Mod Shape: simplified toggle (sine <-> square). Moved to end of row by placement later. -->
@@ -77,6 +78,22 @@
                                 <div class="knob-block">
                                     <div class="knob" id="bass-filter-q" data-min="0.1" data-max="10" data-step="0.1" data-value="1"></div>
                                     <div class="sub">Res</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Inserted mid-cluster to hold Glide between Tone cluster and Mod cluster -->
+                    <div class="mid-cluster effects-cluster">
+                        <div class="effect-group compact">
+                            <div class="effect-title">Glide</div>
+                            <div class="knob-row">
+                                <div class="knob-block">
+                                    <label class="toggle-inline">
+                                        <input type="checkbox" id="bass-glide" aria-label="Glide (portamento)">
+                                        <span class="toggle-label">On</span>
+                                    </label>
+                                    <div class="sub">Porta</div>
                                 </div>
                             </div>
                         </div>

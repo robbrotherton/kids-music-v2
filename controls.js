@@ -12,6 +12,9 @@ window.controlState = {
             sawtooth: 0,
             square: -6
         },
+        // glide / portamento
+        glideEnabled: false,
+        glideTime: 0.12,
         volume: 0, // dB
         filterFreq: 2000,
         filterQ: 1,
@@ -96,6 +99,18 @@ window.initBassControls = function() {
                     }
                 }
             } catch (err) { console.warn('[controls] error applying base wave gain', err); }
+        });
+    }
+
+    // Glide (portamento) toggle
+    const glideEl = document.getElementById('bass-glide');
+    if (glideEl) {
+        try { glideEl.checked = !!window.controlState.bass.glideEnabled; } catch (e) {}
+        glideEl.addEventListener('change', (e) => {
+            window.controlState.bass.glideEnabled = !!e.target.checked;
+            try {
+                if (window.bassSynth) window.bassSynth.portamento = window.controlState.bass.glideEnabled ? window.controlState.bass.glideTime : 0.0;
+            } catch (err) { console.warn('[controls] could not set portamento', err); }
         });
     }
 
@@ -345,6 +360,8 @@ window.initGlobalControls = function() {
 window.updateAllControls = function() {
     // Bass
     window.bassSynth.oscillator.type = window.controlState.bass.waveType;
+    // Ensure portamento is set according to glide setting
+    try { if (window.bassSynth) window.bassSynth.portamento = window.controlState.bass.glideEnabled ? window.controlState.bass.glideTime : 0.0; } catch (e) {}
     // Apply per-wave base gain (dB) to waveGain and set user volume
     try {
         const wave = window.controlState.bass.waveType;
