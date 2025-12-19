@@ -26,6 +26,11 @@
                 </div>
             </div>
             <div id="bass" class="tab-content">
+                <div id="keyboard-container">
+                    <div id="bass-keyboard">
+                        <!-- Bass keyboard will be generated here -->
+                    </div>
+                </div>
                 <!-- Bass sequencer -->
             </div>
             <div id="rhythm" class="tab-content">
@@ -37,20 +42,22 @@
         <div id="drum-grid" class="sequencer-grid">
             <!-- Drum sequencer grid will be generated here -->
         </div>
-        <div id="bass-grid" class="sequencer-grid">
-            <!-- Bass sequencer grid will be generated here -->
-        </div>
-        <div id="transport">
-            <div id="transport-controls">
-                <button id="play-pause">Play</button>
-                <span id="bpm-display">BPM: 120</span>
-                <input type="range" id="bpm-slider" min="60" max="120" value="120">
-                <div id="bar-selector">
-                    <button class="bar-btn active" data-bars="1">1</button>
-                    <button class="bar-btn" data-bars="2">2</button>
-                    <button class="bar-btn" data-bars="4">4</button>
+        <div id="sequencer-container">
+            <div id="bass-grid" class="sequencer-grid">
+                <!-- Bass sequencer grid will be generated here -->
+            </div>
+            <div id="transport">
+                <div id="transport-controls">
+                    <button id="play-pause">Play</button>
+                    <span id="bpm-display">BPM: 120</span>
+                    <input type="range" id="bpm-slider" min="60" max="120" value="120">
+                    <div id="bar-selector">
+                        <button class="bar-btn active" data-bars="1">1</button>
+                        <button class="bar-btn" data-bars="2">2</button>
+                        <button class="bar-btn" data-bars="4">4</button>
+                    </div>
+                    <button id="clear-sequencer">Clear</button>
                 </div>
-                <button id="clear-sequencer">Clear</button>
             </div>
         </div>
     </div>
@@ -58,6 +65,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/15.3.5/Tone.js"></script>
 <script src="audio.js"></script>
 <script src="transport.js"></script>
+<script src="pianoKeyboard.js"></script>
 <script src="drums.js"></script>
 <script src="bass.js"></script>
 <script src="ui.js"></script>

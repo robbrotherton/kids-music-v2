@@ -24,6 +24,29 @@ window.initBassGrid = function() {
     });
 };
 
+// Initialize bass keyboard
+window.initBassKeyboard = function() {
+    const keyboardContainer = document.getElementById('bass-keyboard');
+    if (!keyboardContainer) return;
+
+    window.createPianoKeyboard({
+        container: keyboardContainer,
+        octaves: 2,
+        startOctave: 2,
+        instrument: 'bass',
+        onKeyDown: (note, frequency) => {
+            if (window.bassSynth) {
+                window.bassSynth.triggerAttack(frequency);
+            }
+        },
+        onKeyUp: (note, frequency) => {
+            if (window.bassSynth) {
+                window.bassSynth.triggerRelease();
+            }
+        }
+    });
+};
+
 // Toggle bass step
 window.toggleBassStep = function(e) {
     window.toggleStep(e, {

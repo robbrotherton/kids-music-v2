@@ -9,9 +9,12 @@ window.drumTrack = {
 
 // Initialize drum pads
 window.initDrumPads = function() {
+    console.log('Initializing drum pads');
     const drumPads = document.getElementById('drum-pads');
+    console.log('Drum pads element:', drumPads);
     drumPads.innerHTML = '';
     const padLabels = ['Kick', 'Snare', 'Hat', 'Open'];
+    console.log('Drum sounds length:', window.drumSounds ? window.drumSounds.length : 'undefined');
     for (let i = 0; i < window.drumSounds.length; i++) {
         const pad = document.createElement('button');
         pad.className = 'drum-pad';
@@ -20,6 +23,7 @@ window.initDrumPads = function() {
         pad.addEventListener('click', window.playDrumPad);
         drumPads.appendChild(pad);
     }
+    console.log('Drum pads created');
 };
 
 // Play drum pad
@@ -46,6 +50,7 @@ window.playDrumPad = function(e) {
 
 // Initialize drum grid
 window.initDrumGrid = function() {
+    console.log('Initializing drum grid');
     window.initSequencerGrid({
         gridId: 'drum-grid',
         track: window.drumTrack,
@@ -55,6 +60,7 @@ window.initDrumGrid = function() {
         isPolyphonic: true,
         rowClass: 'drum-row'
     });
+    console.log('Drum grid created');
 };
 
 // Change drum bars
