@@ -483,7 +483,7 @@ body {
 /* Global effects grouped row */
 .effects-row {
     display: flex;
-    gap: 12px; /* tighten gaps so more groups fit horizontally */
+    gap: 0px; /* tighten gaps so more groups fit horizontally */
     align-items: flex-start; /* align group tops so titles line up */
     justify-content: space-between;
     flex-wrap: nowrap; /* keep groups on one horizontal row */
@@ -493,8 +493,10 @@ body {
     min-width: 100px;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: center; /* restore centered titles */
 }
+
+/* Vol group: keep title centered but push the knob-block to the top so the knob sits higher */
 
 /* Compact groups (single small control like wave visual or solo volume) */
 .effect-group.compact {
@@ -505,7 +507,7 @@ body {
     align-self: center; /* vertically center this group within the effects row */
 }
 .effect-group.compact .knob-row {
-    gap: 6px;
+    gap: 0px;
 }
 .effect-group.compact .effect-title {
     margin-bottom: 6px;
@@ -563,6 +565,23 @@ body {
 .effect-group.compact .slider-vertical::before { width:10px; height:10px; top:5px; }
 .effect-group.compact .switch-vertical input:checked + .slider-vertical::before { transform:translate(-50%, 14px); }
 
+/* ADSR compact column next to wave selector */
+.adsr-column {
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    align-items:center;
+}
+.adsr-item { display:flex; align-items:center; gap:8px; }
+.adsr-label { font-size:11px; color:#666; width:14px; text-align:center; }
+.adsr-item input[type="range"]{ width:64px; height:6px; -webkit-appearance:none; appearance:none; background:#ddd; border-radius:4px; }
+.adsr-item input[type="range"]::-webkit-slider-thumb{ appearance:none; width:12px; height:12px; background:#4a90e2; border-radius:50%; cursor:pointer; }
+.adsr-group { padding:0 6px; }
+.effect-group.compact.adsr-group { align-self:center; }
+
+/* Ensure the compact Volume group aligns to the top of the row so its knob baseline matches other groups */
+/* removed vol-specific alignment rules to let Vol behave as a normal group */
+
 /* Cluster for modulation-related controls (vib, trem, wah, mod-shape)
    Allows tighter gaps and independent alignment inside the main effects row */
 .effects-cluster {
@@ -577,7 +596,7 @@ body {
     flex: 0 0 auto;
     min-width: 0;
 }
-.effects-cluster .effect-group .knob-row { gap: 6px; }
+.effects-cluster .effect-group .knob-row { gap: 0px; }
 .effects-cluster .effect-group .knob-block { max-width: 72px; }
 .effects-cluster .effect-group.compact { padding: 0 2px; }
 
@@ -599,7 +618,7 @@ body {
 }
 .knob-row {
     display: flex;
-    gap: 8px; /* fixed gap between knobs inside a group */
+    gap: 0px; /* fixed gap between knobs inside a group */
     justify-content: center;
     width: 100%;
 }

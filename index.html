@@ -27,16 +27,7 @@
                 <h3>Bass Controls</h3>
                 <!-- Wave selector moved to Effects row -->
                 <!-- Volume, Filter, Resonance moved into Effects row as Tone group -->
-                <div class="control-row">
-                    <label>Attack</label>
-                    <div class="knob" id="bass-attack" data-min="0.001" data-max="1" data-step="0.001" data-value="0.01"></div>
-                    <label>Decay</label>
-                    <div class="knob" id="bass-decay" data-min="0.001" data-max="1" data-step="0.001" data-value="0.1"></div>
-                    <label>Sustain</label>
-                    <div class="knob" id="bass-sustain" data-min="0" data-max="1" data-step="0.01" data-value="0.8"></div>
-                    <label>Release</label>
-                    <div class="knob" id="bass-release" data-min="0.001" data-max="2" data-step="0.001" data-value="0.1"></div>
-                </div>
+                <!-- ADSR moved into Effects row as a compact stacked control -->
 
                 <!-- Effects (moved under Bass Controls) -->
                 <h3>Effects</h3>
@@ -50,16 +41,30 @@
                         </div>
                     </div>
 
+                    <div class="effect-group compact adsr-group">
+                        <div class="knob-row">
+                            <div class="knob-block">
+                                <div class="adsr-column">
+                                    <div class="adsr-item"><span class="adsr-label">A</span><input type="range" id="bass-attack" min="0.001" max="1" step="0.001" value="0.01"></div>
+                                    <div class="adsr-item"><span class="adsr-label">D</span><input type="range" id="bass-decay" min="0.001" max="1" step="0.001" value="0.1"></div>
+                                    <div class="adsr-item"><span class="adsr-label">S</span><input type="range" id="bass-sustain" min="0" max="1" step="0.01" value="0.8"></div>
+                                    <div class="adsr-item"><span class="adsr-label">R</span><input type="range" id="bass-release" min="0.001" max="2" step="0.001" value="0.1"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Mod Shape: simplified toggle (sine <-> square). Moved to end of row by placement later. -->
 
                     <div class="tone-cluster effects-cluster">
-                        <div class="effect-group compact">
+                        <div class="effect-group">
                             <div class="effect-title">Vol</div>
                             <div class="knob-row">
-                                <div class="knob-block">
-                                    <div class="knob" id="bass-volume" data-min="-60" data-max="0" data-step="1" data-value="0"></div>
+                                    <div class="knob-block">
+                                        <div class="knob" id="bass-volume" data-min="-60" data-max="0" data-step="1" data-value="0"></div>
+                                        <div class="sub">&nbsp;</div>
+                                    </div>
                                 </div>
-                            </div>
                         </div>
 
                         <div class="effect-group">
