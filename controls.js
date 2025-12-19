@@ -180,7 +180,15 @@ window.initGlobalControls = function() {
             slider.value = window.controlState.global[stateKey];
             slider.addEventListener('input', (e) => {
                 window.controlState.global[stateKey] = parseFloat(e.target.value);
-                window.globalEffects.reverb[param] = window.controlState.global[stateKey];
+                if (param === 'decay') {
+                    console.log(`Setting reverb ${param} to ${window.controlState.global[stateKey]}`);
+                    window.globalEffects.reverb[param] = window.controlState.global[stateKey];
+                } else if (param === 'wet') {
+                    // Control wet/dry mix with gain nodes
+                    const wetAmount = window.controlState.global[stateKey];
+                    window.globalEffects.reverbDryGain.gain.value = 1 - wetAmount;
+                    window.globalEffects.reverbWetGain.gain.value = wetAmount;
+                }
             });
         }
     });
@@ -218,5 +226,8 @@ window.updateAllControls = function() {
     window.globalEffects.delay.feedback = window.controlState.global.delayFeedback;
     window.globalEffects.delay.wet = window.controlState.global.delayWet;
     window.globalEffects.reverb.decay = window.controlState.global.reverbDecay;
-    window.globalEffects.reverb.wet = window.controlState.global.reverbWet;
+    // Set reverb wet/dry mix
+    const reverbWet = window.controlState.global.reverbWet;
+    window.globalEffects.reverbDryGain.gain.value = 1 - reverbWet;
+    window.globalEffects.reverbWetGain.gain.value = reverbWet;
 };

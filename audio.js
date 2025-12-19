@@ -10,17 +10,37 @@ Tone.context.lookAhead = 0.05; // Slightly increase to avoid timing issues
 window.globalEffects = {
     distortion: new Tone.Distortion({ distortion: 0 }),
     delay: new Tone.FeedbackDelay({ delayTime: 0.3, feedback: 0.3, wet: 0 }),
-    reverb: new Tone.Reverb({ decay: 2.5, wet: 0.3 }),
+    reverb: new Tone.Reverb({ decay: 2.5, wet: 1 }), // Fully wet, we control mix externally
+    reverbDryGain: new Tone.Gain(1),
+    reverbWetGain: new Tone.Gain(0),
     compressor: new Tone.Compressor({ threshold: -24, ratio: 4 }),
     limiter: new Tone.Limiter(-1)
 };
 
-// Connect global chain
+// Connect global chain with proper reverb wet/dry mixing
 window.globalEffectsInput = new Tone.Gain();
-window.globalEffectsInput.chain(
+
+// Split for reverb dry/wet
+const reverbInput = new Tone.Gain();
+const reverbDry = new Tone.Gain();
+const reverbWet = new Tone.Gain();
+
+// Connect: input -> splitter -> dry path and reverb
+window.globalEffectsInput.connect(reverbInput);
+reverbInput.connect(window.globalEffects.reverbDryGain);
+reverbInput.connect(window.globalEffects.reverb);
+
+// Reverb output -> wet gain
+window.globalEffects.reverb.connect(window.globalEffects.reverbWetGain);
+
+// Mix dry and wet -> reverbOutput
+const reverbOutput = new Tone.Gain();
+window.globalEffects.reverbDryGain.connect(reverbOutput);
+window.globalEffects.reverbWetGain.connect(reverbOutput);
+
+reverbOutput.chain(
     window.globalEffects.distortion,
     window.globalEffects.delay,
-    window.globalEffects.reverb,
     window.globalEffects.compressor,
     window.globalEffects.limiter,
     Tone.Destination
