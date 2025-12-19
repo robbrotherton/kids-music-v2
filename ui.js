@@ -147,17 +147,13 @@ window.initTabs = function() {
             tabContents.forEach(c => c.classList.remove('active'));
             tab.classList.add('active');
             document.getElementById(tab.dataset.tab).classList.add('active');
+            
             // Show/hide sequencer grids
-            const gridId = tab.dataset.tab === 'drums' ? 'drum-grid' : tab.dataset.tab + '-grid';
             document.querySelectorAll('.sequencer-grid').forEach(g => g.style.display = 'none');
+            const gridId = tab.dataset.tab === 'drums' ? 'drum-grid' : tab.dataset.tab + '-grid';
             const activeGrid = document.getElementById(gridId);
             if (activeGrid) {
                 activeGrid.style.display = 'block';
-                // Adjust app padding to fit the grid height
-                const height = activeGrid.scrollHeight;
-                document.getElementById('app').style.paddingBottom = height + 'px';
-            } else {
-                document.getElementById('app').style.paddingBottom = '1.25em'; // Default
             }
         });
     });
