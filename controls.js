@@ -163,7 +163,25 @@ window.initGlobalControls = function() {
             slider.value = window.controlState.global[stateKey];
             slider.addEventListener('input', (e) => {
                 window.controlState.global[stateKey] = parseFloat(e.target.value);
-                window.globalEffects.delay[param] = window.controlState.global[stateKey];
+                if (param === 'wet') {
+                    // Control wet/dry mix with gain nodes
+                    const wetAmount = window.controlState.global[stateKey];
+                    window.globalEffects.delayDryGain.gain.value = 1 - wetAmount;
+                    window.globalEffects.delayWetGain.gain.value = wetAmount;
+                } else {
+                    // Try setting delay time/feedback dynamically (use .value for Tone.Signal)
+                    const v = window.controlState.global[stateKey];
+                    console.log(`Setting delay ${param} to ${v}`);
+                    if (param === 'delayTime') {
+                        if (window.globalEffects.delay && window.globalEffects.delay.delayTime) {
+                            window.globalEffects.delay.delayTime.value = v;
+                        }
+                    } else if (param === 'feedback') {
+                        if (window.globalEffects.delay && window.globalEffects.delay.feedback) {
+                            window.globalEffects.delay.feedback.value = v;
+                        }
+                    }
+                }
             });
         }
     });
@@ -222,9 +240,17 @@ window.updateAllControls = function() {
 
     // Global
     window.globalEffects.distortion.distortion = window.controlState.global.distortion;
-    window.globalEffects.delay.delayTime = window.controlState.global.delayTime;
-    window.globalEffects.delay.feedback = window.controlState.global.delayFeedback;
-    window.globalEffects.delay.wet = window.controlState.global.delayWet;
+    // Set delay wet/dry mix
+    const delayWet = window.controlState.global.delayWet;
+    window.globalEffects.delayDryGain.gain.value = 1 - delayWet;
+    window.globalEffects.delayWetGain.gain.value = delayWet;
+    // Use .value on Tone.Signal parameters
+    if (window.globalEffects.delay && window.globalEffects.delay.delayTime) {
+        window.globalEffects.delay.delayTime.value = window.controlState.global.delayTime;
+    }
+    if (window.globalEffects.delay && window.globalEffects.delay.feedback) {
+        window.globalEffects.delay.feedback.value = window.controlState.global.delayFeedback;
+    }
     window.globalEffects.reverb.decay = window.controlState.global.reverbDecay;
     // Set reverb wet/dry mix
     const reverbWet = window.controlState.global.reverbWet;

@@ -9,7 +9,9 @@ Tone.context.lookAhead = 0.05; // Slightly increase to avoid timing issues
 // Global effects chain
 window.globalEffects = {
     distortion: new Tone.Distortion({ distortion: 0 }),
-    delay: new Tone.FeedbackDelay({ delayTime: 0.3, feedback: 0.3, wet: 0 }),
+    delay: new Tone.FeedbackDelay({ delayTime: 0.3, feedback: 0.3 }),
+    delayDryGain: new Tone.Gain(1),
+    delayWetGain: new Tone.Gain(0),
     reverb: new Tone.Reverb({ decay: 2.5, wet: 1 }), // Fully wet, we control mix externally
     reverbDryGain: new Tone.Gain(1),
     reverbWetGain: new Tone.Gain(0),
@@ -33,14 +35,33 @@ reverbInput.connect(window.globalEffects.reverb);
 // Reverb output -> wet gain
 window.globalEffects.reverb.connect(window.globalEffects.reverbWetGain);
 
-// Mix dry and wet -> reverbOutput
-const reverbOutput = new Tone.Gain();
-window.globalEffects.reverbDryGain.connect(reverbOutput);
-window.globalEffects.reverbWetGain.connect(reverbOutput);
+// Connect: input -> splitter -> dry path and reverb
+window.globalEffectsInput.connect(reverbInput);
+reverbInput.connect(window.globalEffects.reverbDryGain);
+reverbInput.connect(window.globalEffects.reverb);
 
-reverbOutput.chain(
+// Reverb output -> wet gain
+window.globalEffects.reverb.connect(window.globalEffects.reverbWetGain);
+
+// Mix dry and wet -> delayInput
+const delayInput = new Tone.Gain();
+window.globalEffects.reverbDryGain.connect(delayInput);
+window.globalEffects.reverbWetGain.connect(delayInput);
+
+// Delay wet/dry split
+delayInput.connect(window.globalEffects.delayDryGain);
+delayInput.connect(window.globalEffects.delay);
+
+// Delay output -> wet gain
+window.globalEffects.delay.connect(window.globalEffects.delayWetGain);
+
+// Mix delay dry/wet -> distortion
+const delayOutput = new Tone.Gain();
+window.globalEffects.delayDryGain.connect(delayOutput);
+window.globalEffects.delayWetGain.connect(delayOutput);
+
+delayOutput.chain(
     window.globalEffects.distortion,
-    window.globalEffects.delay,
     window.globalEffects.compressor,
     window.globalEffects.limiter,
     Tone.Destination
