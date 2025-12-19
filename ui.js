@@ -181,6 +181,41 @@ window.toggleStep = function(e, config) {
     }
 };
 
+// Generic monophonic span toggle (reusable for bass-like tracks)
+// Usage: toggleSpanStep(e, spanData, { track, dataKey, eventKey, cellClass })
+window.toggleSpanStep = function(e, spanData, config) {
+    const { track, dataKey = 'note', eventKey = 'noteIndex', cellClass } = config || {};
+    let startStep, endStep, noteIndex;
+
+    if (spanData) {
+        ({ startStep, endStep, noteIndex } = spanData);
+    } else {
+        noteIndex = parseInt(e.target.dataset[dataKey]);
+        startStep = endStep = parseInt(e.target.dataset.step);
+    }
+
+    // Find any events on this note that overlap the clicked range
+    const overlapping = track.events.filter(ev => ev[eventKey] === noteIndex && ev.startStep <= endStep && ev.endStep >= startStep);
+
+    if (overlapping.length > 0) {
+        // Remove overlapping events
+        track.events = track.events.filter(ev => !(ev[eventKey] === noteIndex && ev.startStep <= endStep && ev.endStep >= startStep));
+        // Clear UI for all steps in the clicked range
+        for (let s = startStep; s <= endStep; s++) {
+            const selector = cellClass ? `.${cellClass}[data-step="${s}"][data-note="${noteIndex}"]` : `[data-step="${s}"][data-note="${noteIndex}"]`;
+            document.querySelectorAll(selector).forEach(btn => btn.classList.remove('active'));
+        }
+        return;
+    }
+
+    // No overlapping events -> add a new span
+    track.events.push({ startStep, endStep, [eventKey]: noteIndex });
+    for (let s = startStep; s <= endStep; s++) {
+        const selector = cellClass ? `.${cellClass}[data-step="${s}"][data-note="${noteIndex}"]` : `[data-step="${s}"][data-note="${noteIndex}"]`;
+        document.querySelectorAll(selector).forEach(btn => btn.classList.add('active'));
+    }
+};
+
 // Tab switching
 window.initTabs = function() {
     const tabs = document.querySelectorAll('.tab');
