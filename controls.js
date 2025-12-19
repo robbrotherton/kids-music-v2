@@ -7,10 +7,10 @@ window.controlState = {
         waveType: 'sine',
         // per-wave base gain (dB) applied in addition to user `volume` control
         waveGainDb: {
-            sine: 20,
-            triangle: 9,
+            sine: 0,
+            triangle: 0,
             sawtooth: 0,
-            square: -6
+            square: 0
         },
         // glide / portamento
         glideEnabled: false,
@@ -39,9 +39,12 @@ window.controlState = {
         // Modulation shape for vibrato/tremolo/wah: 'sine'|'triangle'|'sawtooth'|'square'
         modShape: 'sine',
         reverbDecay: 2.5,
-        reverbWet: 0.3
+        reverbWet: 0
     }
 };
+
+// Maximum allowed combined boost (wave base gain + user volume) to avoid clipping
+const MAX_COMBINED_DB = 6; // dB
 
 // Initialize controls
 window.initControls = function() {
@@ -70,10 +73,33 @@ window.initBassControls = function() {
             const val = (e && (e.detail && e.detail.value)) || (e.target && e.target.value) || waveSelect.value || waveSelect.getAttribute('value');
             window.controlState.bass.waveType = val;
             console.log('[controls] bass wave set to', val);
-            try { window.bassSynth.oscillator.type = val; } catch (err) { console.warn('[controls] could not set oscillator.type', err); }
+            try {
+                // Try direct assignment first, then the more robust `set` API for Tone objects
+                if (window.bassSynth && window.bassSynth.oscillator && typeof window.bassSynth.oscillator.type !== 'undefined') {
+                    window.bassSynth.oscillator.type = val;
+                }
+                // Also call set to cover other internal shapes (some Tone versions prefer set)
+                if (window.bassSynth && typeof window.bassSynth.set === 'function') {
+                    try { window.bassSynth.set({ oscillator: { type: val } }); } catch (e) {}
+                }
+                console.log('[controls] oscillator type set to', val, 'on bassSynth');
+                // Some environments / Tone.js versions don't update the running oscillator
+                // instance reliably via property assignment. Replace the synth instance
+                // and reconnect it through the existing chain to guarantee the change.
+                try { if (typeof window.replaceBassSynth === 'function') window.replaceBassSynth(val); } catch (e) { console.warn('[controls] replaceBassSynth failed', e); }
+            } catch (err) { console.warn('[controls] could not set oscillator.type', err); }
             // apply per-wave base gain (dB) to dedicated waveGain, keep user volume separate
             try {
-                const baseDb = (window.controlState.bass.waveGainDb && window.controlState.bass.waveGainDb[val] !== undefined) ? window.controlState.bass.waveGainDb[val] : 0;
+                let baseDb = (window.controlState.bass.waveGainDb && window.controlState.bass.waveGainDb[val] !== undefined) ? window.controlState.bass.waveGainDb[val] : 0;
+                // prevent combined gain (baseDb + user volume) from exceeding safe threshold
+                try {
+                    const userDb = (window.controlState.bass && window.controlState.bass.volume) ? window.controlState.bass.volume : 0;
+                    if ((baseDb + userDb) > MAX_COMBINED_DB) {
+                        const allowedBase = MAX_COMBINED_DB - userDb;
+                        console.warn('[controls] combined wave+user volume too high, reducing baseDb from', baseDb, 'to', allowedBase);
+                        baseDb = allowedBase;
+                    }
+                } catch (e) {}
                 if (window.bassChain && window.bassChain.waveGain) {
                     if (window.bassChain.waveGain.volume !== undefined && window.bassChain.waveGain.volume.value !== undefined) {
                         window.bassChain.waveGain.volume.value = baseDb;
@@ -365,7 +391,16 @@ window.updateAllControls = function() {
     // Apply per-wave base gain (dB) to waveGain and set user volume
     try {
         const wave = window.controlState.bass.waveType;
-        const baseDb = (window.controlState.bass.waveGainDb && window.controlState.bass.waveGainDb[wave] !== undefined) ? window.controlState.bass.waveGainDb[wave] : 0;
+        let baseDb = (window.controlState.bass.waveGainDb && window.controlState.bass.waveGainDb[wave] !== undefined) ? window.controlState.bass.waveGainDb[wave] : 0;
+        // clamp combined base + user volume to avoid excessive boost
+        try {
+            const userDb = (window.controlState.bass && window.controlState.bass.volume) ? window.controlState.bass.volume : 0;
+            if ((baseDb + userDb) > MAX_COMBINED_DB) {
+                const allowedBase = MAX_COMBINED_DB - userDb;
+                console.warn('[controls] init combined wave+user volume too high, reducing baseDb from', baseDb, 'to', allowedBase);
+                baseDb = allowedBase;
+            }
+        } catch (e) {}
         if (window.bassChain && window.bassChain.waveGain) {
             if (window.bassChain.waveGain.volume !== undefined && window.bassChain.waveGain.volume.value !== undefined) {
                 window.bassChain.waveGain.volume.value = baseDb;

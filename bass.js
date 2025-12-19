@@ -21,16 +21,27 @@ window.initBassKeyboard = function() {
         startOctave: 1,
         instrument: 'bass',
         onKeyDown: (note, frequency) => {
+            console.log('[bass keyboard] keydown', note, frequency, 'midi:', Tone.Frequency(note).toMidi());
             if (window.bassSynth) {
                 window.bassSynth.triggerAttack(frequency);
             }
         },
         onKeyUp: (note, frequency) => {
+            console.log('[bass keyboard] keyup', note, frequency);
             if (window.bassSynth) {
                 window.bassSynth.triggerRelease();
             }
         }
     });
+
+    // Quick sanity check: log C1 and C2 frequencies and their ratio (should be 2)
+    try {
+        const c1 = Tone.Frequency('C1').toFrequency();
+        const c2 = Tone.Frequency('C2').toFrequency();
+        console.log('[bass keyboard] sanity check C1:', c1, 'C2:', c2, 'ratio:', (c2 / c1));
+    } catch (e) {
+        console.log('[bass keyboard] sanity check failed', e);
+    }
 };
 
 // Initialize bass grid
