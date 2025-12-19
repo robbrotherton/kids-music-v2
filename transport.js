@@ -84,8 +84,8 @@ window.setupTransportSchedule = function() {
         if (window.bassTrack.enabled) {
             window.bassTrack.events.forEach(event => {
                 if (event.step === value.step && window.bassSynth) {
-                    const freq = Tone.Frequency(bassNotes[event.noteIndex]).toFrequency();
-                    window.bassSynth.triggerAttackRelease(freq, '8n', time);
+                    const freq = Tone.Frequency(window.bassNotes[event.noteIndex]).toFrequency();
+                    window.bassSynth.triggerAttackRelease(freq, '16n', time);
                 }
             });
         }        // Highlight bass current step

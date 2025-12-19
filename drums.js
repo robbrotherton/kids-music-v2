@@ -46,82 +46,42 @@ window.playDrumPad = function(e) {
 
 // Initialize drum grid
 window.initDrumGrid = function() {
-    const drumGrid = document.getElementById('drum-grid');
-    drumGrid.innerHTML = '';
-    document.documentElement.style.setProperty('--steps', window.drumTrack.lengthSteps);
-    const containerWidth = drumGrid.clientWidth - 20; // padding 10*2
-    const maxHeight = 160; // max-height 10em
-    const availableHeight = (maxHeight - 20) / 4; // padding and 4 rows
-    const buttonSize = Math.min(containerWidth / window.drumTrack.lengthSteps, availableHeight);
-    window.drumButtons = [];
-    for (let sound = 0; sound < window.drumSounds.length; sound++) {
-        window.drumButtons[sound] = [];
-        const row = document.createElement('div');
-        row.className = 'sequencer-row drum-row';
-        for (let step = 0; step < window.drumTrack.lengthSteps; step++) {
-            const stepBtn = document.createElement('button');
-            stepBtn.className = `sequencer-cell drum-step sound-${sound}`;
-            if (step % 4 === 0) stepBtn.classList.add('beat');
-            stepBtn.dataset.sound = sound;
-            stepBtn.dataset.step = step;
-            stepBtn.style.width = buttonSize + 'px';
-            stepBtn.style.height = buttonSize + 'px';
-            // Check if active
-            const isActive = window.drumTrack.events.some(ev => ev.step === step && ev.soundIndex === sound);
-            if (isActive) stepBtn.classList.add('active');
-            stepBtn.addEventListener('click', window.toggleDrumStep);
-            row.appendChild(stepBtn);
-            window.drumButtons[sound][step] = stepBtn;
-        }
-        drumGrid.appendChild(row);
-    }
+    window.initSequencerGrid({
+        gridId: 'drum-grid',
+        track: window.drumTrack,
+        rowLabels: ['Kick', 'Snare', 'Hat', 'Open'],
+        cellClass: 'drum-step',
+        toggleFunction: window.toggleDrumStep,
+        isPolyphonic: true,
+        rowClass: 'drum-row'
+    });
 };
 
 // Change drum bars
 window.changeDrumBars = function(bars) {
-    const wasPlaying = window.isPlaying;
-    if (wasPlaying) {
-        window.togglePlay(); // Stop
-    }
-    window.drumTrack.lengthSteps = bars * 16;
-    // Clear events beyond new length
-    window.drumTrack.events = window.drumTrack.events.filter(ev => ev.step < window.drumTrack.lengthSteps);
-    window.initDrumGrid();
-    // Update bass to match
-    window.bassTrack.lengthSteps = window.drumTrack.lengthSteps;
-    window.initBassGrid();
-    // Reset step highlighting
-    window.previousStep = -1;
-    // Update bar buttons
-    document.querySelectorAll('.bar-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (parseInt(btn.dataset.bars) === bars) btn.classList.add('active');
-    });
-    if (wasPlaying) {
-        window.togglePlay(); // Restart
-    }
+    window.changeSequenceLength(bars, [window.drumTrack, window.bassTrack]);
 };
 
 // Toggle drum step
 window.toggleDrumStep = function(e) {
-    const sound = parseInt(e.target.dataset.sound);
-    const step = parseInt(e.target.dataset.step);
-    const existing = window.drumTrack.events.find(ev => ev.step === step && ev.soundIndex === sound);
-    if (existing) {
-        window.drumTrack.events = window.drumTrack.events.filter(ev => ev !== existing);
-        e.target.classList.remove('active');
-    } else {
-        window.drumTrack.events.push({ step, soundIndex: sound });
-        e.target.classList.add('active');
-    }
+    window.toggleStep(e, {
+        track: window.drumTrack,
+        isPolyphonic: true,
+        dataKey: 'sound',
+        eventKey: 'soundIndex'
+    });
 };
 
-// Clear sequencer
+// Clear drum track
+window.clearDrumTrack = function() {
+    window.clearTrack(window.drumTrack, 'drum-step');
+};
+
+// Clear sequencer (all tracks)
 window.clearSequencer = function() {
-    // Clear events
-    window.drumTrack.events = [];
-    // Clear UI
-    document.querySelectorAll('.drum-step.active').forEach(step => {
-        step.classList.remove('active');
-    });
+    window.clearDrumTrack();
+    window.clearBassTrack();
+    // TODO: Add other tracks here as they are implemented
+    // window.clearRhythmTrack();
+    // window.clearLeadTrack();
 };
