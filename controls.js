@@ -26,6 +26,8 @@ window.controlState = {
         delayTime: 0.3,
         delayFeedback: 0.3,
         delayWet: 0,
+        // Modulation shape for vibrato/tremolo/wah: 'sine'|'triangle'|'sawtooth'|'square'
+        modShape: 'sine',
         reverbDecay: 2.5,
         reverbWet: 0.3
     }
@@ -134,20 +136,26 @@ window.initBassControls = function() {
                 window.controlState.bass[stateKey] = parseFloat(e.target.value);
                 // Map controls to actual effect properties safely
                 const v = window.controlState.bass[stateKey];
-                if (effect === 'vibrato' && window.bassChain && window.bassChain.vibrato) {
-                    if (param === 'depth' && window.bassChain.vibrato.depth !== undefined) {
-                        try { window.bassChain.vibrato.depth.value = v; } catch (err) { window.bassChain.vibrato.depth = v; }
-                    }
-                    if (param === 'frequency' && window.bassChain.vibrato.frequency !== undefined) {
-                        try { window.bassChain.vibrato.frequency.value = v; } catch (err) { window.bassChain.vibrato.frequency = v; }
-                    }
-                } else if (effect === 'tremolo' && window.bassChain && window.bassChain.tremolo) {
-                    if (param === 'depth' && window.bassChain.tremolo.depth !== undefined) {
-                        try { window.bassChain.tremolo.depth.value = v; } catch (err) { window.bassChain.tremolo.depth = v; }
-                    }
-                    if (param === 'frequency' && window.bassChain.tremolo.frequency !== undefined) {
-                        try { window.bassChain.tremolo.frequency.value = v; } catch (err) { window.bassChain.tremolo.frequency = v; }
-                    }
+                    if (effect === 'vibrato' && window.bassChain && window.bassChain.vibrato) {
+                        if (param === 'depth' && window.bassChain.vibrato.depth !== undefined) {
+                            try { window.bassChain.vibrato.depth.value = v; } catch (err) { window.bassChain.vibrato.depth = v; }
+                        }
+                        if (param === 'frequency' && window.bassChain.vibrato.frequency !== undefined) {
+                            try { window.bassChain.vibrato.frequency.value = v; } catch (err) { window.bassChain.vibrato.frequency = v; }
+                        }
+                    } else if (effect === 'tremolo' && window.bassChain && window.bassChain.tremoloLFO && window.bassChain.tremoloGain) {
+                        // depth -> set LFO range so it oscillates between [1-depth, 1]
+                        if (param === 'depth') {
+                            const depth = v;
+                            try {
+                                window.bassChain.tremoloLFO.min = Math.max(0, 1 - depth);
+                                window.bassChain.tremoloLFO.max = 1;
+                            } catch (err) {}
+                        }
+                        // frequency -> set LFO rate
+                        if (param === 'frequency') {
+                            try { window.bassChain.tremoloLFO.frequency.value = v; } catch (err) { window.bassChain.tremoloLFO.frequency = v; }
+                        }
                 } else if (effect === 'wah' && window.bassChain && window.bassChain.wahLFO && window.bassChain.wahFilter) {
                     // wahDepth -> adjust LFO min/max around center
                     if (param === 'depth') {
@@ -214,6 +222,23 @@ window.initGlobalControls = function() {
         }
     });
 
+    // Modulation shape (affects vibrato, tremolo, wah LFO)
+    const modShapeSelect = document.getElementById('global-mod-shape');
+    if (modShapeSelect) {
+        modShapeSelect.value = window.controlState.global.modShape;
+        modShapeSelect.addEventListener('change', (e) => {
+            window.controlState.global.modShape = e.target.value;
+            const t = e.target.value;
+            // Apply to existing chains safely
+            if (window.bassChain) {
+                try { if (window.bassChain.vibrato) window.bassChain.vibrato.type = t; } catch (err) {}
+                try { if (window.bassChain.vibrato && window.bassChain.vibrato.oscillator) window.bassChain.vibrato.oscillator.type = t; } catch (err) {}
+                try { if (window.bassChain.tremoloLFO) window.bassChain.tremoloLFO.type = t; } catch (err) {}
+                try { if (window.bassChain.wahLFO) window.bassChain.wahLFO.type = t; } catch (err) {}
+            }
+        });
+    }
+
     // Reverb
     const reverbSliders = [
         { id: 'global-reverb-decay', stateKey: 'reverbDecay', param: 'decay' },
@@ -264,9 +289,10 @@ window.updateAllControls = function() {
             try { window.bassChain.vibrato.depth.value = window.controlState.bass.vibratoDepth; } catch (e) { window.bassChain.vibrato.depth = window.controlState.bass.vibratoDepth; }
             try { window.bassChain.vibrato.frequency.value = window.controlState.bass.vibratoRate; } catch (e) { window.bassChain.vibrato.frequency = window.controlState.bass.vibratoRate; }
         }
-        if (window.bassChain.tremolo) {
-            try { window.bassChain.tremolo.depth.value = window.controlState.bass.tremoloDepth; } catch (e) { window.bassChain.tremolo.depth = window.controlState.bass.tremoloDepth; }
-            try { window.bassChain.tremolo.frequency.value = window.controlState.bass.tremoloRate; } catch (e) { window.bassChain.tremolo.frequency = window.controlState.bass.tremoloRate; }
+        if (window.bassChain.tremoloLFO && window.bassChain.tremoloGain) {
+            try { window.bassChain.tremoloLFO.min = Math.max(0, 1 - window.controlState.bass.tremoloDepth); } catch (e) {}
+            try { window.bassChain.tremoloLFO.max = 1; } catch (e) {}
+            try { window.bassChain.tremoloLFO.frequency.value = window.controlState.bass.tremoloRate; } catch (e) { window.bassChain.tremoloLFO.frequency = window.controlState.bass.tremoloRate; }
         }
         if (window.bassChain.wahLFO && window.bassChain.wahFilter) {
             const v = window.controlState.bass.wahDepth;
@@ -296,4 +322,13 @@ window.updateAllControls = function() {
     const reverbWet = window.controlState.global.reverbWet;
     window.globalEffects.reverbDryGain.gain.value = 1 - reverbWet;
     window.globalEffects.reverbWetGain.gain.value = reverbWet;
+
+    // Apply modulation shape to existing chains
+    const modShape = window.controlState.global.modShape;
+    if (window.bassChain) {
+        try { if (window.bassChain.vibrato) window.bassChain.vibrato.type = modShape; } catch (e) {}
+        try { if (window.bassChain.vibrato && window.bassChain.vibrato.oscillator) window.bassChain.vibrato.oscillator.type = modShape; } catch (e) {}
+        try { if (window.bassChain.tremoloLFO) window.bassChain.tremoloLFO.type = modShape; } catch (e) {}
+        try { if (window.bassChain.wahLFO) window.bassChain.wahLFO.type = modShape; } catch (e) {}
+    }
 };
