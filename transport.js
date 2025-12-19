@@ -5,6 +5,15 @@ window.isPlaying = false;
 window.currentStep = 0;
 window.bpm = 120;
 window.previousStep = -1;
+window.previousBassStep = -1;
+
+// Reusable function to highlight current step in any grid
+window.highlightCurrentStep = function(selector, current, previous) {
+    if (previous !== -1) {
+        document.querySelectorAll(`${selector}[data-step="${previous}"]`).forEach(btn => btn.classList.remove('current'));
+    }
+    document.querySelectorAll(`${selector}[data-step="${current}"]`).forEach(btn => btn.classList.add('current'));
+};
 
 // Transport functions
 window.togglePlay = async function() {
@@ -24,6 +33,9 @@ window.togglePlay = async function() {
                 }
             }
         }
+        // Clear current step highlight for bass
+        document.querySelectorAll('.bass-step.current').forEach(btn => btn.classList.remove('current'));
+        window.previousBassStep = -1;
         window.previousStep = -1;
         window.currentStep = 0;
     } else {
@@ -56,18 +68,7 @@ window.setupTransportSchedule = function() {
     window.part = new Tone.Part((time, value) => {
         if (!window.isPlaying) return;
         // Highlight current step
-        if (window.previousStep !== -1 && window.drumButtons) {
-            for (let sound = 0; sound < window.drumSounds.length; sound++) {
-                if (window.drumButtons[sound] && window.drumButtons[sound][window.previousStep]) {
-                    window.drumButtons[sound][window.previousStep].classList.remove('current');
-                }
-            }
-        }
-        for (let sound = 0; sound < window.drumSounds.length; sound++) {
-            if (window.drumButtons[sound] && window.drumButtons[sound][value.step]) {
-                window.drumButtons[sound][value.step].classList.add('current');
-            }
-        }
+        window.highlightCurrentStep('.drum-step', value.step, window.previousStep);
         window.previousStep = value.step;
 
         // Drums
@@ -79,7 +80,17 @@ window.setupTransportSchedule = function() {
                 }
             });
         }
-        // Future: other tracks
+        // Bass
+        if (window.bassTrack.enabled) {
+            window.bassTrack.events.forEach(event => {
+                if (event.step === value.step && window.bassSynth) {
+                    const freq = Tone.Frequency(bassNotes[event.noteIndex]).toFrequency();
+                    window.bassSynth.triggerAttackRelease(freq, '8n', time);
+                }
+            });
+        }        // Highlight bass current step
+        window.highlightCurrentStep('.bass-step', value.step, window.previousBassStep);
+        window.previousBassStep = value.step;
         window.currentStep = (value.step + 1) % window.drumTrack.lengthSteps;
     }, events);
     window.part.loop = true;

@@ -86,6 +86,9 @@ window.changeDrumBars = function(bars) {
     // Clear events beyond new length
     window.drumTrack.events = window.drumTrack.events.filter(ev => ev.step < window.drumTrack.lengthSteps);
     window.initDrumGrid();
+    // Update bass to match
+    window.bassTrack.lengthSteps = window.drumTrack.lengthSteps;
+    window.initBassGrid();
     // Reset step highlighting
     window.previousStep = -1;
     // Update bar buttons

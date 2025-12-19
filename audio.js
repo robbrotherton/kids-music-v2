@@ -26,5 +26,12 @@ window.drumSampler = new Tone.Sampler({
     }
 }).connect(window.compressor); // Bypass reverb, go to compressor
 
+// Bass synth
+window.bassSynth = new Tone.Synth({
+    oscillator: { type: 'sawtooth' },
+    envelope: { attack: 0.01, decay: 0.1, sustain: 0.8, release: 0.1 },
+    portamento: 0.1 // Smooth pitch changes
+}).connect(window.reverb);
+
 // Drum sounds array (all point to sampler, but we'll use notes)
 window.drumSounds = [window.drumSampler, window.drumSampler, window.drumSampler, window.drumSampler];

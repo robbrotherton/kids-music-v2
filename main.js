@@ -4,6 +4,7 @@
 window.initApp = function() {
     window.initDrumPads();
     window.initDrumGrid();
+    window.initBassGrid();
     window.initTabs();
     window.initEventListeners();
     window.setupTransportSchedule();
