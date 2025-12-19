@@ -25,10 +25,7 @@
         <div id="controls-panel">
             <div class="controls-section full-row">
                 <h3>Bass Controls</h3>
-                <div class="control-row">
-                    <label>Wave Type</label>
-                    <wave-selector id="bass-wave-type" value="sawtooth"></wave-selector>
-                </div>
+                <!-- Wave selector moved to Effects row -->
                 <!-- Volume, Filter, Resonance moved into Effects row as Tone group -->
                 <div class="control-row">
                     <label>Attack</label>
@@ -44,6 +41,15 @@
                 <!-- Effects (moved under Bass Controls) -->
                 <h3>Effects</h3>
                 <div class="effects-row">
+                    <div class="effect-group">
+                        <div class="effect-title">Wave</div>
+                        <div class="knob-row">
+                            <div class="knob-block">
+                                <wave-selector id="bass-wave-type" value="sawtooth"></wave-selector>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="effect-group">
                         <div class="effect-title">Mod Shape</div>
                         <div class="knob-row">

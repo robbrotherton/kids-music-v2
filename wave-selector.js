@@ -29,9 +29,6 @@
         <div class="slider-row">
           <input type="range" min="0" max="3" step="1" value="0">
         </div>
-        <div class="labels">
-          <div>Sine</div><div>Tri</div><div>Saw</div><div>Sq</div>
-        </div>
       `;
       const link = document.createElement('link');
       link.setAttribute('rel','stylesheet');
