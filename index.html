@@ -1,28 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kids Music Toy</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎵</text></svg>">
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div id="app">
-        <header>
-            <h1>Kids Music</h1>
-            <div id="transport">
-                <button id="play-pause">Play</button>
-                <span id="bpm-display">BPM: 120</span>
-                <input type="range" id="bpm-slider" min="60" max="120" value="120">
-                <div id="bar-selector">
-                    <button class="bar-btn active" data-bars="1">1</button>
-                    <button class="bar-btn" data-bars="2">2</button>
-                    <button class="bar-btn" data-bars="4">4</button>
-                </div>
-                <button id="clear-sequencer">Clear</button>
-            </div>
-        </header>
+
         <nav id="tabs">
             <button class="tab active" data-tab="drums">Drums</button>
             <button class="tab" data-tab="bass">Bass</button>
@@ -50,13 +40,27 @@
         <div id="bass-grid" class="sequencer-grid">
             <!-- Bass sequencer grid will be generated here -->
         </div>
+        <div id="transport">
+            <div id="transport-controls">
+                <button id="play-pause">Play</button>
+                <span id="bpm-display">BPM: 120</span>
+                <input type="range" id="bpm-slider" min="60" max="120" value="120">
+                <div id="bar-selector">
+                    <button class="bar-btn active" data-bars="1">1</button>
+                    <button class="bar-btn" data-bars="2">2</button>
+                    <button class="bar-btn" data-bars="4">4</button>
+                </div>
+                <button id="clear-sequencer">Clear</button>
+            </div>
+        </div>
     </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/15.3.5/Tone.js"></script>
-    <script src="audio.js"></script>
-    <script src="transport.js"></script>
-    <script src="drums.js"></script>
-    <script src="bass.js"></script>
-    <script src="ui.js"></script>
-    <script src="main.js"></script>
 </body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/15.3.5/Tone.js"></script>
+<script src="audio.js"></script>
+<script src="transport.js"></script>
+<script src="drums.js"></script>
+<script src="bass.js"></script>
+<script src="ui.js"></script>
+<script src="main.js"></script>
+
 </html>
