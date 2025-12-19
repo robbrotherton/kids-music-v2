@@ -28,7 +28,7 @@ body {
 
 #content-area {
     flex: 1;
-    padding: 20px;
+    /* padding: 20px; */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -358,9 +358,5 @@ body {
 }
 
 #bass-keyboard {
-    /* display: content; */
-    /* width: 100%;
-    padding: 0;
-    margin: 0;
-    /* height: fit-content; */ */
+    padding: 10px;
 }
