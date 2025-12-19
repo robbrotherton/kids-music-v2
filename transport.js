@@ -24,6 +24,11 @@ window.togglePlay = async function() {
             window.part = null;
         }
         Tone.Transport.stop();
+        // Release any currently playing synths
+        if (window.bassSynth) {
+            window.bassSynth.triggerRelease();
+        }
+        // TODO: Add release for rhythm and lead synths when implemented
         document.getElementById('play-pause').textContent = 'Play';
         // Clear current step highlight
         if (window.previousStep !== -1 && window.drumButtons) {
