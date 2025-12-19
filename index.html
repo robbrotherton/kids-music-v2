@@ -22,7 +22,7 @@
 
         <!-- Controls panel -->
         <div id="controls-panel">
-            <div class="controls-section">
+            <div class="controls-section full-row">
                 <h3>Bass Controls</h3>
                 <div class="control-row">
                     <label>Wave Type</label>
@@ -33,18 +33,7 @@
                         <option value="sawtooth">Sawtooth</option>
                     </select>
                 </div>
-                <div class="control-row">
-                    <label>Volume</label>
-                    <div class="knob" id="bass-volume" data-min="-60" data-max="0" data-step="1" data-value="0"></div>
-                </div>
-                <div class="control-row">
-                    <label>Filter</label>
-                    <div class="knob" id="bass-filter-freq" data-min="100" data-max="5000" data-step="10" data-value="2000"></div>
-                </div>
-                <div class="control-row">
-                    <label>Resonance</label>
-                    <div class="knob" id="bass-filter-q" data-min="0.1" data-max="10" data-step="0.1" data-value="1"></div>
-                </div>
+                <!-- Volume, Filter, Resonance moved into Effects row as Tone group -->
                 <div class="control-row">
                     <label>Attack</label>
                     <div class="knob" id="bass-attack" data-min="0.001" data-max="1" data-step="0.001" data-value="0.01"></div>
@@ -55,40 +44,88 @@
                     <label>Release</label>
                     <div class="knob" id="bass-release" data-min="0.001" data-max="2" data-step="0.001" data-value="0.1"></div>
                 </div>
-            </div>
 
-            <div class="controls-section">
+                <!-- Effects (moved under Bass Controls) -->
                 <h3>Effects</h3>
-                <div class="control-row">
-                    <label>Mod Shape</label>
-                    <select id="global-mod-shape">
-                        <option value="sine">Sine</option>
-                        <option value="triangle">Triangle</option>
-                        <option value="sawtooth">Sawtooth</option>
-                        <option value="square">Square</option>
-                    </select>
-                </div>
-                <div class="control-row">
-                    <label>Vibrato Depth</label>
-                    <div class="knob" id="bass-vibrato-depth" data-min="0" data-max="1" data-step="0.01" data-value="0"></div>
-                    <label>Vibrato Rate</label>
-                    <div class="knob" id="bass-vibrato-rate" data-min="0.1" data-max="20" data-step="0.1" data-value="5"></div>
-                </div>
-                <div class="control-row">
-                    <label>Tremolo Depth</label>
-                    <div class="knob" id="bass-tremolo-depth" data-min="0" data-max="1" data-step="0.01" data-value="0"></div>
-                    <label>Tremolo Rate</label>
-                    <div class="knob" id="bass-tremolo-rate" data-min="0.1" data-max="20" data-step="0.1" data-value="5"></div>
-                </div>
-                <div class="control-row">
-                    <label>Wah Depth</label>
-                    <div class="knob" id="bass-wah-depth" data-min="0" data-max="1" data-step="0.01" data-value="0"></div>
-                    <label>Wah Rate</label>
-                    <div class="knob" id="bass-wah-rate" data-min="0.1" data-max="20" data-step="0.1" data-value="5"></div>
+                <div class="effects-row">
+                    <div class="effect-group">
+                        <div class="effect-title">Mod Shape</div>
+                        <div class="knob-row">
+                            <div class="knob-block">
+                                <select id="global-mod-shape">
+                                    <option value="sine">Sine</option>
+                                    <option value="triangle">Triangle</option>
+                                    <option value="sawtooth">Sawtooth</option>
+                                    <option value="square">Square</option>
+                                </select>
+                                <div class="sub">Shape</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="effect-group">
+                        <div class="effect-title">Tone</div>
+                        <div class="knob-row">
+                            <div class="knob-block">
+                                <div class="knob" id="bass-volume" data-min="-60" data-max="0" data-step="1" data-value="0"></div>
+                                <div class="sub">Vol</div>
+                            </div>
+                            <div class="knob-block">
+                                <div class="knob" id="bass-filter-freq" data-min="100" data-max="5000" data-step="10" data-value="2000"></div>
+                                <div class="sub">Filter</div>
+                            </div>
+                            <div class="knob-block">
+                                <div class="knob" id="bass-filter-q" data-min="0.1" data-max="10" data-step="0.1" data-value="1"></div>
+                                <div class="sub">Res</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="effect-group">
+                        <div class="effect-title">Vibrato</div>
+                        <div class="knob-row">
+                            <div class="knob-block">
+                                <div class="knob" id="bass-vibrato-depth" data-min="0" data-max="1" data-step="0.01" data-value="0"></div>
+                                <div class="sub">Depth</div>
+                            </div>
+                            <div class="knob-block">
+                                <div class="knob" id="bass-vibrato-rate" data-min="0.1" data-max="20" data-step="0.1" data-value="5"></div>
+                                <div class="sub">Rate</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="effect-group">
+                        <div class="effect-title">Tremolo</div>
+                        <div class="knob-row">
+                            <div class="knob-block">
+                                <div class="knob" id="bass-tremolo-depth" data-min="0" data-max="1" data-step="0.01" data-value="0"></div>
+                                <div class="sub">Depth</div>
+                            </div>
+                            <div class="knob-block">
+                                <div class="knob" id="bass-tremolo-rate" data-min="0.1" data-max="20" data-step="0.1" data-value="5"></div>
+                                <div class="sub">Rate</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="effect-group">
+                        <div class="effect-title">Wah</div>
+                        <div class="knob-row">
+                            <div class="knob-block">
+                                <div class="knob" id="bass-wah-depth" data-min="0" data-max="1" data-step="0.01" data-value="0"></div>
+                                <div class="sub">Depth</div>
+                            </div>
+                            <div class="knob-block">
+                                <div class="knob" id="bass-wah-rate" data-min="0.1" data-max="20" data-step="0.1" data-value="5"></div>
+                                <div class="sub">Rate</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="controls-section">
+            <div class="controls-section full-row">
                 <h3>Global Effects</h3>
                 <div class="effects-row">
                     <div class="effect-group">
