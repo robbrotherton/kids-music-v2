@@ -1,0 +1,45 @@
+#drum-pads {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25em;
+    margin: 1.25em 0;
+    max-width: 25em;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.drum-pad {
+    aspect-ratio: 1;
+    border: 2px solid #ccc;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1.5em;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 5em;
+    transition: background-color 0.1s;
+}
+
+.drum-pad:active { transform: scale(0.95); }
+
+.drum-pad:nth-child(1) { background-color: #FF6B7A; color: white; }
+.drum-pad:nth-child(2) { background-color: #FFFF6B; color: black; }
+.drum-pad:nth-child(3) { background-color: #6BB8FF; color: white; }
+.drum-pad:nth-child(4) { background-color: #6BFF6B; color: white; }
+
+.drum-row { display: contents; }
+
+.drum-step {
+    border: 1px solid #ccc;
+    background-color: white;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.1s;
+}
+
+.sound-0.active { background-color: #FF6B7A; }
+.sound-1.active { background-color: #FFFF6B; color: black; }
+.sound-2.active { background-color: #6BB8FF; }
+.sound-3.active { background-color: #6BFF6B; }
