@@ -133,7 +133,7 @@ window.setupTransportSchedule = function() {
                 // to avoid harsh summing/clipping when multiple voices play. This uses a
                 // configurable per-extra-voice attenuation (in dB).
                 const nVoices = notes.length;
-                const CHORD_ATTENUATION_DB_PER_EXTRA_VOICE = 10; // dB reduction per extra voice (increased)
+                const CHORD_ATTENUATION_DB_PER_EXTRA_VOICE = 14; // dB reduction per extra voice
                 const attenuationDb = nVoices > 1 ? -CHORD_ATTENUATION_DB_PER_EXTRA_VOICE * (nVoices - 1) : 0;
 
                 // Get volume node reference and current value
@@ -154,7 +154,7 @@ window.setupTransportSchedule = function() {
                     }
                 } catch (e) {}
 
-                // Scale velocity by number of voices to avoid clipping when multiple notes play
+                // Scale velocity by number of voices (conservative: 1/n)
                 const velocity = Math.max(0.05, 1 / nVoices);
                 try {
                     window.rhythmSynth.triggerAttackRelease(notes, stepTime, time, velocity);

@@ -17,7 +17,7 @@ window.globalEffects = {
     reverbDryGain: new Tone.Gain(1),
     reverbWetGain: new Tone.Gain(0),
     compressor: new Tone.Compressor({ threshold: -24, ratio: 4 }),
-    limiter: new Tone.Limiter(-6)
+    limiter: new Tone.Limiter(-12)
 };
 
 // Connect global chain with proper reverb wet/dry mixing
@@ -217,7 +217,7 @@ try {
 
         // Add a gentle compressor on the rhythm chain to tame peaks
         try {
-            window.rhythmChain.compressor = new Tone.Compressor({ threshold: -18, ratio: 2, attack: 0.01, release: 0.25 });
+            window.rhythmChain.compressor = new Tone.Compressor({ threshold: -24, ratio: 2, attack: 0.01, release: 0.25 });
             try { window.rhythmSynth.disconnect(); } catch (e) {}
             try {
                 window.rhythmSynth.chain(
@@ -254,7 +254,7 @@ window.testRhythmSound = async function(notes = ['C3','E3','G3'], duration = '8n
         // testRhythmSound invoked
     if (window.rhythmSynth) {
         const nVoices = (Array.isArray(notes) ? notes.length : 1);
-        const velocity = Math.max(0.05, 1 / nVoices);
+        const velocity = Math.max(0.05, 1 / Math.sqrt(nVoices));
         try {
             window.rhythmSynth.triggerAttackRelease(notes, duration, undefined, velocity);
             return;
