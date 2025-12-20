@@ -62,6 +62,53 @@ window.controlState = {
     }
 };
 
+// Instrument lookup helpers
+window.activeInstrument = window.activeInstrument || 'bass';
+
+window.getInstrumentNodes = function(name) {
+    name = name || window.activeInstrument;
+    const synth = window[`${name}Synth`];
+    const chain = window[`${name}Chain`];
+    const state = (window.controlState && window.controlState[name]) ? window.controlState[name] : null;
+    return { name, synth, chain, state };
+};
+
+window.getActiveSynth = function() { return window.getInstrumentNodes().synth; };
+window.getActiveChain = function() { return window.getInstrumentNodes().chain; };
+window.getActiveState = function() { return window.getInstrumentNodes().state; };
+
+// Bind shared controls to a named instrument (sets activeInstrument and refreshes UI)
+window.bindControlsToInstrument = function(name) {
+    if (!name) return;
+    window.activeInstrument = name;
+    try {
+        // Call the existing update routine which applies controlState -> nodes
+        if (typeof window.updateAllControls === 'function') window.updateAllControls();
+    } catch (e) {}
+    try { if (typeof window.refreshControlsUI === 'function') window.refreshControlsUI(); } catch (e) {}
+};
+
+// Refresh visible control values from the active instrument state
+window.refreshControlsUI = function() {
+    const nodes = window.getInstrumentNodes();
+    if (!nodes || !nodes.state) return;
+    const s = nodes.state;
+    try {
+        const waveEl = document.getElementById('bass-wave-type'); if (waveEl) waveEl.value = s.waveType;
+        const vol = document.getElementById('bass-volume'); if (vol) vol.value = s.volume;
+        const ff = document.getElementById('bass-filter-freq'); if (ff) ff.value = s.filterFreq;
+        const fq = document.getElementById('bass-filter-q'); if (fq) fq.value = s.filterQ;
+        ['attack','decay','sustain','release'].forEach(param => { const el = document.getElementById(`bass-${param}`); if (el) el.value = s[param]; });
+        const glideEl = document.getElementById('bass-glide'); if (glideEl) glideEl.checked = !!s.glideEnabled;
+        // effects
+        const map = ['vibrato','tremolo','wah'];
+        map.forEach(prefix => {
+            const depth = document.getElementById(`bass-${prefix}-depth`); if (depth) depth.value = s[`${prefix}Depth`];
+            const rate = document.getElementById(`bass-${prefix}-rate`); if (rate) rate.value = s[`${prefix}Rate`];
+        });
+    } catch (e) {}
+};
+
 // Rhythm controls (mirrors bass controls but scoped to rhythmChain/rhythmSynth)
 window.initRhythmControls = function() {
     const waveSelect = document.getElementById('rhythm-wave-type');
@@ -203,75 +250,50 @@ window.initBassControls = function() {
     // Wave type
     const waveSelect = document.getElementById('bass-wave-type');
     if (waveSelect) {
-        try { waveSelect.value = window.controlState.bass.waveType; } catch(e){}
+        try { waveSelect.value = (window.getActiveState() && window.getActiveState().waveType) || window.controlState.bass.waveType; } catch(e){}
         waveSelect.addEventListener('change', (e) => {
-            // some events may not provide target.value, support component's property or detail
             const val = (e && (e.detail && e.detail.value)) || (e.target && e.target.value) || waveSelect.value || waveSelect.getAttribute('value');
-            window.controlState.bass.waveType = val;
-            
+            const nodes = window.getInstrumentNodes();
+            if (!nodes.state) return;
+            nodes.state.waveType = val;
             try {
-                // Try direct assignment first, then the more robust `set` API for Tone objects
-                if (window.bassSynth && window.bassSynth.oscillator && typeof window.bassSynth.oscillator.type !== 'undefined') {
-                    window.bassSynth.oscillator.type = val;
+                if (nodes.synth && nodes.synth.oscillator && typeof nodes.synth.oscillator.type !== 'undefined') {
+                    nodes.synth.oscillator.type = val;
                 }
-                // Also call set to cover other internal shapes (some Tone versions prefer set)
-                if (window.bassSynth && typeof window.bassSynth.set === 'function') {
-                    try { window.bassSynth.set({ oscillator: { type: val } }); } catch (e) {}
+                if (nodes.synth && typeof nodes.synth.set === 'function') {
+                    try { nodes.synth.set({ oscillator: { type: val } }); } catch (e) {}
                 }
-                
-                // Some environments / Tone.js versions don't update the running oscillator
-                // instance reliably via property assignment. Replace the synth instance
-                // and reconnect it through the existing chain to guarantee the change.
-                try { if (typeof window.replaceBassSynth === 'function') window.replaceBassSynth(val); } catch (e) { }
+                // platform-specific synth replacement (keep existing behavior for bass)
+                try { if (nodes.name === 'bass' && typeof window.replaceBassSynth === 'function') window.replaceBassSynth(val); } catch (e) { }
             } catch (err) { }
-            // apply per-wave base gain (dB) to dedicated waveGain, keep user volume separate
             try {
-                let baseDb = (window.controlState.bass.waveGainDb && window.controlState.bass.waveGainDb[val] !== undefined) ? window.controlState.bass.waveGainDb[val] : 0;
-                // prevent combined gain (baseDb + user volume) from exceeding safe threshold
+                let baseDb = (nodes.state.waveGainDb && nodes.state.waveGainDb[val] !== undefined) ? nodes.state.waveGainDb[val] : 0;
                 try {
-                    const userDb = (window.controlState.bass && window.controlState.bass.volume) ? window.controlState.bass.volume : 0;
-                    if ((baseDb + userDb) > MAX_COMBINED_DB) {
-                        const allowedBase = MAX_COMBINED_DB - userDb;
-                        
-                        baseDb = allowedBase;
-                    }
+                    const userDb = (nodes.state && nodes.state.volume) ? nodes.state.volume : 0;
+                    if ((baseDb + userDb) > MAX_COMBINED_DB) baseDb = MAX_COMBINED_DB - userDb;
                 } catch (e) {}
-                if (window.bassChain && window.bassChain.waveGain) {
-                    if (window.bassChain.waveGain.volume !== undefined && window.bassChain.waveGain.volume.value !== undefined) {
-                        window.bassChain.waveGain.volume.value = baseDb;
-                        
-                    } else if (window.bassChain.waveGain.value !== undefined) {
-                        window.bassChain.waveGain.value = baseDb;
-                        
-                    } else if (typeof window.bassChain.waveGain === 'number') {
-                        window.bassChain.waveGain = baseDb;
-                        
-                    } else {
-                        
-                    }
+                if (nodes.chain && nodes.chain.waveGain) {
+                    if (nodes.chain.waveGain.volume !== undefined && nodes.chain.waveGain.volume.value !== undefined) nodes.chain.waveGain.volume.value = baseDb;
+                    else if (nodes.chain.waveGain.value !== undefined) nodes.chain.waveGain.value = baseDb;
                 }
-                // ensure user volume is preserved
-                if (window.bassChain && window.bassChain.volume) {
-                    if (window.bassChain.volume.volume !== undefined && window.bassChain.volume.volume.value !== undefined) {
-                        window.bassChain.volume.volume.value = window.controlState.bass.volume;
-                    } else if (window.bassChain.volume.value !== undefined) {
-                        window.bassChain.volume.value = window.controlState.bass.volume;
-                    } else if (typeof window.bassChain.volume === 'number') {
-                        window.bassChain.volume = window.controlState.bass.volume;
-                    }
+                if (nodes.chain && nodes.chain.volume) {
+                    if (nodes.chain.volume.volume !== undefined && nodes.chain.volume.volume.value !== undefined) nodes.chain.volume.volume.value = nodes.state.volume;
+                    else if (nodes.chain.volume.value !== undefined) nodes.chain.volume.value = nodes.state.volume;
                 }
-            } catch (err) { }
+            } catch (err) {}
         });
     }
 
     // Glide (portamento) toggle
     const glideEl = document.getElementById('bass-glide');
     if (glideEl) {
-        try { glideEl.checked = !!window.controlState.bass.glideEnabled; } catch (e) {}
+        try { glideEl.checked = !!(window.getActiveState() && window.getActiveState().glideEnabled); } catch (e) {}
         glideEl.addEventListener('change', (e) => {
-            window.controlState.bass.glideEnabled = !!e.target.checked;
+            const nodes = window.getInstrumentNodes();
+            if (!nodes.state) return;
+            nodes.state.glideEnabled = !!e.target.checked;
             try {
-                if (window.bassSynth) window.bassSynth.portamento = window.controlState.bass.glideEnabled ? window.controlState.bass.glideTime : 0.0;
+                if (nodes.synth) nodes.synth.portamento = nodes.state.glideEnabled ? nodes.state.glideTime : 0.0;
             } catch (err) { }
         });
     }
@@ -279,20 +301,17 @@ window.initBassControls = function() {
     // Volume
     const volumeSlider = document.getElementById('bass-volume');
     if (volumeSlider) {
-        volumeSlider.value = window.controlState.bass.volume;
+        try { volumeSlider.value = (window.getActiveState() && window.getActiveState().volume) || window.controlState.bass.volume; } catch(e){}
         volumeSlider.addEventListener('input', (e) => {
-            window.controlState.bass.volume = parseFloat(e.target.value);
+            const v = parseFloat(e.target.value);
+            const nodes = window.getInstrumentNodes();
+            if (!nodes.state) return;
+            nodes.state.volume = v;
             try {
-                // update only user volume control node; per-wave base gain remains on waveGain
-                const userDb = window.controlState.bass.volume;
-                if (window.bassChain && window.bassChain.volume) {
-                    if (window.bassChain.volume.volume !== undefined && window.bassChain.volume.volume.value !== undefined) {
-                        window.bassChain.volume.volume.value = userDb;
-                    } else if (window.bassChain.volume.value !== undefined) {
-                        window.bassChain.volume.value = userDb;
-                    } else if (typeof window.bassChain.volume === 'number') {
-                        window.bassChain.volume = userDb;
-                    }
+                if (nodes.chain && nodes.chain.volume) {
+                    if (nodes.chain.volume.volume !== undefined && nodes.chain.volume.volume.value !== undefined) nodes.chain.volume.volume.value = v;
+                    else if (nodes.chain.volume.value !== undefined) nodes.chain.volume.value = v;
+                    else if (typeof nodes.chain.volume === 'number') nodes.chain.volume = v;
                 }
             } catch (err) { }
         });
@@ -301,20 +320,26 @@ window.initBassControls = function() {
     // Filter frequency
     const filterFreqSlider = document.getElementById('bass-filter-freq');
     if (filterFreqSlider) {
-        filterFreqSlider.value = window.controlState.bass.filterFreq;
+        try { filterFreqSlider.value = (window.getActiveState() && window.getActiveState().filterFreq) || window.controlState.bass.filterFreq; } catch(e){}
         filterFreqSlider.addEventListener('input', (e) => {
-            window.controlState.bass.filterFreq = parseFloat(e.target.value);
-            window.bassChain.filter.frequency.value = window.controlState.bass.filterFreq;
+            const v = parseFloat(e.target.value);
+            const nodes = window.getInstrumentNodes();
+            if (!nodes.state) return;
+            nodes.state.filterFreq = v;
+            try { if (nodes.chain && nodes.chain.filter) nodes.chain.filter.frequency.value = v; } catch (err) {}
         });
     }
 
     // Filter Q
     const filterQSlider = document.getElementById('bass-filter-q');
     if (filterQSlider) {
-        filterQSlider.value = window.controlState.bass.filterQ;
+        try { filterQSlider.value = (window.getActiveState() && window.getActiveState().filterQ) || window.controlState.bass.filterQ; } catch(e){}
         filterQSlider.addEventListener('input', (e) => {
-            window.controlState.bass.filterQ = parseFloat(e.target.value);
-            window.bassChain.filter.Q.value = window.controlState.bass.filterQ;
+            const v = parseFloat(e.target.value);
+            const nodes = window.getInstrumentNodes();
+            if (!nodes.state) return;
+            nodes.state.filterQ = v;
+            try { if (nodes.chain && nodes.chain.filter) nodes.chain.filter.Q.value = v; } catch (err) {}
         });
     }
 
@@ -323,10 +348,13 @@ window.initBassControls = function() {
     adsrSliders.forEach(param => {
         const slider = document.getElementById(`bass-${param}`);
         if (slider) {
-            slider.value = window.controlState.bass[param];
+            try { slider.value = (window.getActiveState() && window.getActiveState()[param]) || window.controlState.bass[param]; } catch(e){}
             slider.addEventListener('input', (e) => {
-                window.controlState.bass[param] = parseFloat(e.target.value);
-                window.bassSynth.envelope[param] = window.controlState.bass[param];
+                const v = parseFloat(e.target.value);
+                const nodes = window.getInstrumentNodes();
+                if (!nodes.state) return;
+                nodes.state[param] = v;
+                try { if (nodes.synth && nodes.synth.envelope) nodes.synth.envelope[param] = v; } catch (err) {}
             });
         }
     });
@@ -358,43 +386,27 @@ window.initBassControls = function() {
     effectSliders.forEach(({ id, stateKey, effect, param }) => {
         const slider = document.getElementById(id);
         if (slider) {
-            slider.value = window.controlState.bass[stateKey];
+            slider.value = (window.getActiveState() && window.getActiveState()[stateKey]) || window.controlState.bass[stateKey];
             slider.addEventListener('input', (e) => {
-                window.controlState.bass[stateKey] = parseFloat(e.target.value);
-                // Map controls to actual effect properties safely
-                const v = window.controlState.bass[stateKey];
-                    if (effect === 'vibrato' && window.bassChain && window.bassChain.vibrato) {
-                        if (param === 'depth' && window.bassChain.vibrato.depth !== undefined) {
-                            try { window.bassChain.vibrato.depth.value = v; } catch (err) { window.bassChain.vibrato.depth = v; }
-                        }
-                        if (param === 'frequency' && window.bassChain.vibrato.frequency !== undefined) {
-                            try { window.bassChain.vibrato.frequency.value = v; } catch (err) { window.bassChain.vibrato.frequency = v; }
-                        }
-                    } else if (effect === 'tremolo' && window.bassChain && window.bassChain.tremoloLFO && window.bassChain.tremoloGain) {
-                        // depth -> set LFO range so it oscillates between [1-depth, 1]
-                        if (param === 'depth') {
-                            const depth = v;
-                            try {
-                                window.bassChain.tremoloLFO.min = Math.max(0, 1 - depth);
-                                window.bassChain.tremoloLFO.max = 1;
-                            } catch (err) {}
-                        }
-                        // frequency -> set LFO rate
-                        if (param === 'frequency') {
-                            try { window.bassChain.tremoloLFO.frequency.value = v; } catch (err) { window.bassChain.tremoloLFO.frequency = v; }
-                        }
-                } else if (effect === 'wah' && window.bassChain && window.bassChain.wahLFO && window.bassChain.wahFilter) {
-                    // wahDepth -> adjust LFO min/max around center
+                const v = parseFloat(e.target.value);
+                const nodes = window.getInstrumentNodes();
+                if (!nodes.state) return;
+                nodes.state[stateKey] = v;
+                if (effect === 'vibrato' && nodes.chain && nodes.chain.vibrato) {
+                    if (param === 'depth') try { nodes.chain.vibrato.depth.value = v; } catch (err) { nodes.chain.vibrato.depth = v; }
+                    if (param === 'frequency') try { nodes.chain.vibrato.frequency.value = v; } catch (err) { nodes.chain.vibrato.frequency = v; }
+                } else if (effect === 'tremolo' && nodes.chain && nodes.chain.tremoloLFO && nodes.chain.tremoloGain) {
                     if (param === 'depth') {
-                        const center = 600;
-                        const range = 600; // +/- range
-                        window.bassChain.wahLFO.min = Math.max(50, center - v * range);
-                        window.bassChain.wahLFO.max = Math.min(5000, center + v * range);
+                        try { nodes.chain.tremoloLFO.min = Math.max(0,1-v); nodes.chain.tremoloLFO.max = 1; } catch(e){}
                     }
-                    // wahRate -> set LFO rate
-                    if (param === 'gain') {
-                        try { window.bassChain.wahLFO.frequency.value = v; } catch (err) { window.bassChain.wahLFO.frequency = v; }
+                    if (param === 'frequency') try { nodes.chain.tremoloLFO.frequency.value = v; } catch(e){ nodes.chain.tremoloLFO.frequency = v; }
+                } else if (effect === 'wah' && nodes.chain && nodes.chain.wahLFO && nodes.chain.wahFilter) {
+                    if (param === 'depth') {
+                        const center = 600; const range = 600;
+                        nodes.chain.wahLFO.min = Math.max(50, center - v * range);
+                        nodes.chain.wahLFO.max = Math.min(5000, center + v * range);
                     }
+                    if (param === 'gain') try { nodes.chain.wahLFO.frequency.value = v; } catch(e){ nodes.chain.wahLFO.frequency = v; }
                 }
             });
         }

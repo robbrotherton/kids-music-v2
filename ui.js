@@ -261,6 +261,8 @@ window.initTabs = function() {
             if (activeGrid) {
                 activeGrid.style.display = 'block';
             }
+            // Rebind shared controls to the active instrument (if available)
+            try { if (window.bindControlsToInstrument) window.bindControlsToInstrument(tab.dataset.tab); } catch (e) {}
         });
     });
     
