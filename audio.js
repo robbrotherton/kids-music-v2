@@ -16,8 +16,10 @@ window.globalEffects = {
     reverb: new Tone.Reverb({ decay: 2.5, wet: 1 }), // Fully wet, we control mix externally
     reverbDryGain: new Tone.Gain(1),
     reverbWetGain: new Tone.Gain(0),
-    compressor: new Tone.Compressor({ threshold: -24, ratio: 4 }),
-    limiter: new Tone.Limiter(-12)
+    // tighten the compressor attack to catch fast transients
+    compressor: new Tone.Compressor({ threshold: -24, ratio: 4, attack: 0.002, release: 0.05 }),
+    // lower limiter ceiling slightly to give headroom and prevent clipping
+    limiter: new Tone.Limiter(-6)
 };
 
 // Connect global chain with proper reverb wet/dry mixing
@@ -135,6 +137,8 @@ window.bassSynth = new Tone.Synth({
 });
 
 window.bassChain = window.createSynthChain(window.bassSynth);
+// Reduce default bass output a bit to avoid clipping when combined with chords
+try { if (window.bassChain && window.bassChain.volume && window.bassChain.volume.volume && window.bassChain.volume.volume.value !== undefined) window.bassChain.volume.volume.value = -6; else if (window.bassChain && window.bassChain.volume && window.bassChain.volume.value !== undefined) window.bassChain.volume.value = -6; } catch (e) {}
 
 // Replace the bass synth instance while keeping the existing effect chain nodes.
 // Useful when changing oscillator types in environments where direct assignment
