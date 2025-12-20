@@ -37,6 +37,12 @@ window.initSequencerGrid = function(config) {
         buttonSize = Math.min(containerWidth / track.lengthSteps, availableHeight);
         window.drumButtons = [];
     }
+    // Defensive fallback: if we couldn't measure the grid (e.g. it's hidden),
+    // pick a reasonable default so cells render with stable sizing instead
+    // of producing invalid widths (NaN / negative).
+    if (!isFinite(buttonSize) || buttonSize <= 0) {
+        buttonSize = 30; // matches sequencer CSS min size
+    }
 
     for (let rowIndex = 0; rowIndex < rowLabels.length; rowIndex++) {
         const row = document.createElement('div');

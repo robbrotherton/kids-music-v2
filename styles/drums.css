@@ -29,7 +29,16 @@
 .drum-pad:nth-child(3) { background-color: #6BB8FF; color: white; }
 .drum-pad:nth-child(4) { background-color: #6BFF6B; color: white; }
 
-.drum-row { display: contents; }
+.drum-row {
+    /* Ensure the sequencer row remains a flex container so spacing
+       and alignment match other instrument rows. Using display:flex
+       prevents the element from being eliminated (display:contents)
+       which caused the drum grid cells to escape the intended layout. */
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+}
 
 .drum-step {
     border: 1px solid #ccc;
