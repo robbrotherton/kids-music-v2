@@ -354,7 +354,14 @@ window.initBassControls = function() {
                 const nodes = window.getInstrumentNodes();
                 if (!nodes.state) return;
                 nodes.state[param] = v;
-                try { if (nodes.synth && nodes.synth.envelope) nodes.synth.envelope[param] = v; } catch (err) {}
+                    try {
+                        if (nodes.synth && typeof nodes.synth.set === 'function') {
+                            const obj = { envelope: { [param]: v } };
+                            try { nodes.synth.set(obj); } catch (err) {}
+                        } else if (nodes.synth && nodes.synth.envelope) {
+                            nodes.synth.envelope[param] = v;
+                        }
+                    } catch (err) {}
             });
         }
     });
@@ -642,11 +649,22 @@ window.updateAllControls = function() {
             window.rhythmChain.filter.frequency.value = window.controlState.rhythm.filterFreq;
             window.rhythmChain.filter.Q.value = window.controlState.rhythm.filterQ;
         }
-        if (window.rhythmSynth && window.rhythmSynth.envelope) {
-            try { window.rhythmSynth.envelope.attack = window.controlState.rhythm.attack; } catch (e) {}
-            try { window.rhythmSynth.envelope.decay = window.controlState.rhythm.decay; } catch (e) {}
-            try { window.rhythmSynth.envelope.sustain = window.controlState.rhythm.sustain; } catch (e) {}
-            try { window.rhythmSynth.envelope.release = window.controlState.rhythm.release; } catch (e) {}
+        if (window.rhythmSynth) {
+            try {
+                if (typeof window.rhythmSynth.set === 'function') {
+                    window.rhythmSynth.set({ envelope: {
+                        attack: window.controlState.rhythm.attack,
+                        decay: window.controlState.rhythm.decay,
+                        sustain: window.controlState.rhythm.sustain,
+                        release: window.controlState.rhythm.release
+                    }});
+                } else if (window.rhythmSynth.envelope) {
+                    try { window.rhythmSynth.envelope.attack = window.controlState.rhythm.attack; } catch (e) {}
+                    try { window.rhythmSynth.envelope.decay = window.controlState.rhythm.decay; } catch (e) {}
+                    try { window.rhythmSynth.envelope.sustain = window.controlState.rhythm.sustain; } catch (e) {}
+                    try { window.rhythmSynth.envelope.release = window.controlState.rhythm.release; } catch (e) {}
+                }
+            } catch (e) {}
         }
         if (window.rhythmChain) {
             if (window.rhythmChain.vibrato) {

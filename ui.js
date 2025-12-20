@@ -73,26 +73,47 @@ window.initSequencerGrid = function(config) {
                 stepBtn.style.height = buttonSize + 'px';
             }
 
-            // Check if active - handle both discrete steps and note spans
+            // Check if active - handle discrete steps and note spans for both poly and mono
             let isActive = false;
-            if (isPolyphonic) {
-                // Support different event property names (soundIndex, noteIndex, etc.)
-                isActive = track.events.some(ev => {
-                    if (ev.step !== step) return false;
-                    // any event property other than 'step' that equals rowIndex counts
+            // Consider both point events ({step, noteIndex}) and span events ({startStep,endStep,noteIndex})
+            isActive = track.events.some(ev => {
+                // point event
+                if (ev.step !== undefined && ev.step === step) {
                     return Object.keys(ev).some(k => k !== 'step' && ev[k] === rowIndex);
-                });
-            } else {
-                // For monophonic tracks, check if this step falls within any note span
-                isActive = track.events.some(ev => 
-                    ev.startStep <= step && ev.endStep >= step && ev.noteIndex === rowIndex
-                );
-            }
+                }
+                // span event
+                if (ev.startStep !== undefined && ev.endStep !== undefined) {
+                    return ev.startStep <= step && ev.endStep >= step && (ev.noteIndex === rowIndex || ev.note === rowIndex);
+                }
+                return false;
+            });
             if (isActive) stepBtn.classList.add('active');
 
             // Attach event listeners
             if (isPolyphonic) {
                 stepBtn.addEventListener('click', toggleFunction);
+                // Enable drag-to-span for polyphonic grids: start drag on mousedown and complete on mouseup
+                stepBtn.addEventListener('mousedown', (e) => {
+                    window.dragState.isDragging = true;
+                    window.dragState.startStep = step;
+                    window.dragState.startNote = rowIndex;
+                    window.dragState.currentStep = step;
+                    window.dragState.currentNote = rowIndex;
+                });
+                stepBtn.addEventListener('mouseenter', (e) => {
+                    if (window.dragState.isDragging && window.dragState.startNote === rowIndex) {
+                        window.dragState.currentStep = step;
+                    }
+                });
+                stepBtn.addEventListener('mouseup', (e) => {
+                    if (window.dragState.isDragging) {
+                        const start = Math.min(window.dragState.startStep, window.dragState.currentStep);
+                        const end = Math.max(window.dragState.startStep, window.dragState.currentStep);
+                        // call polyphonic span toggle
+                        window.togglePolySpanStep(e, { startStep: start, endStep: end, noteIndex: rowIndex }, { track, eventKey: 'noteIndex', dataKey: 'sound', cellClass });
+                        window.dragState.isDragging = false;
+                    }
+                });
             } else {
                 // Monophonic: support click for single toggle, drag for spans
                 stepBtn.addEventListener('mousedown', (e) => {
@@ -239,6 +260,47 @@ window.toggleSpanStep = function(e, spanData, config) {
             } else {
                 btn.classList.add('span-cont');
             }
+        });
+    }
+};
+
+// Polyphonic span toggle: allow creating/removing spans per-note without removing
+// other notes that overlap the same step range. This is used by the rhythm grid.
+window.togglePolySpanStep = function(e, spanData, config) {
+    const { track, eventKey = 'noteIndex', cellClass } = config || {};
+    let startStep, endStep, noteIndex;
+    if (spanData) {
+        ({ startStep, endStep, noteIndex } = spanData);
+    } else {
+        noteIndex = parseInt(e.target.dataset.sound || e.target.dataset.note);
+        startStep = endStep = parseInt(e.target.dataset.step);
+    }
+
+    // Find overlapping spans for the same noteIndex
+    const overlapping = track.events.filter(ev => ev[eventKey] === noteIndex && ev.startStep !== undefined && ev.startStep <= endStep && ev.endStep >= startStep);
+
+    if (overlapping.length > 0) {
+        // Remove overlapping spans for this note
+        track.events = track.events.filter(ev => !(ev[eventKey] === noteIndex && ev.startStep !== undefined && ev.startStep <= endStep && ev.endStep >= startStep));
+        // Clear UI for those steps for this note only
+        for (let s = startStep; s <= endStep; s++) {
+            const selector = cellClass ? `.${cellClass}[data-step="${s}"][data-sound="${noteIndex}"]` : `[data-step="${s}"][data-sound="${noteIndex}"]`;
+            document.querySelectorAll(selector).forEach(btn => {
+                btn.classList.remove('active');
+                btn.classList.remove('span-start');
+                btn.classList.remove('span-cont');
+            });
+        }
+        return;
+    }
+
+    // Add span for this specific note (don't remove events on other notes)
+    track.events.push({ startStep, endStep, [eventKey]: noteIndex });
+    for (let s = startStep; s <= endStep; s++) {
+        const selector = cellClass ? `.${cellClass}[data-step="${s}"][data-sound="${noteIndex}"]` : `[data-step="${s}"][data-sound="${noteIndex}"]`;
+        document.querySelectorAll(selector).forEach((btn, idx) => {
+            btn.classList.add('active');
+            if (s === startStep) btn.classList.add('span-start'); else btn.classList.add('span-cont');
         });
     }
 };

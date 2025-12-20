@@ -124,55 +124,58 @@ window.setupTransportSchedule = function() {
         }        // Highlight bass current step
         window.highlightCurrentStep('.bass-step', value.step, window.previousBassStep);
         window.previousBassStep = value.step;
-        // Rhythm - play polyphonic events (chords) on this step (independent of bass events)
+        // Rhythm - support both point events ({step}) and span events ({startStep,endStep})
         if (window.rhythmTrack && window.rhythmTrack.enabled && window.rhythmSynth) {
-            const rhythmEvents = window.rhythmTrack.events.filter(ev => ev.step === value.step);
-            if (rhythmEvents.length > 0) {
-                const notes = rhythmEvents.map(ev => window.rhythmNotes[ev.noteIndex]);
-                // Normalize chord loudness: apply a more aggressive attenuation per extra voice
-                // to avoid harsh summing/clipping when multiple voices play. This uses a
-                // configurable per-extra-voice attenuation (in dB).
-                const nVoices = notes.length;
-                const CHORD_ATTENUATION_DB_PER_EXTRA_VOICE = 14; // dB reduction per extra voice
-                const attenuationDb = nVoices > 1 ? -CHORD_ATTENUATION_DB_PER_EXTRA_VOICE * (nVoices - 1) : 0;
+            const events = window.rhythmTrack.events || [];
 
-                // Get volume node reference and current value
-                const vNode = window.rhythmChain && window.rhythmChain.volume;
-                let prevVol = 0;
-                try {
-                    if (vNode) {
-                        if (vNode.volume !== undefined && vNode.volume.value !== undefined) prevVol = vNode.volume.value;
-                        else if (vNode.value !== undefined) prevVol = vNode.value;
-                    }
-                } catch (e) { prevVol = window.controlState.rhythm.volume || 0; }
+            // Find events that start on this step (either point events or span starts)
+            const startingEvents = events.filter(ev => (ev.step !== undefined && ev.step === value.step) || (ev.startStep !== undefined && ev.startStep === value.step));
 
-                const appliedVol = prevVol + attenuationDb;
-                try {
-                    if (vNode) {
-                        if (vNode.volume !== undefined && vNode.volume.value !== undefined) vNode.volume.value = appliedVol;
-                        else if (vNode.value !== undefined) vNode.value = appliedVol;
-                    }
-                } catch (e) {}
+            const immediateNotes = [];
+            const sustainedNotes = [];
 
-                // Scale velocity by number of voices (conservative: 1/n)
+            startingEvents.forEach(ev => {
+                if (ev.step !== undefined) {
+                    immediateNotes.push(window.rhythmNotes[ev.noteIndex]);
+                } else if (ev.startStep !== undefined) {
+                    if (ev.endStep !== undefined && ev.endStep === ev.startStep) immediateNotes.push(window.rhythmNotes[ev.noteIndex]);
+                    else sustainedNotes.push(window.rhythmNotes[ev.noteIndex]);
+                }
+            });
+
+            // Trigger immediate notes as a chord for the step. Use the same velocity
+            // scaling used by the keyboard chord mode (1 / nVoices, clipped) so sequenced
+            // chords match manual key presses.
+            if (immediateNotes.length > 0) {
+                const nVoices = immediateNotes.length;
                 const velocity = Math.max(0.05, 1 / nVoices);
                 try {
-                    window.rhythmSynth.triggerAttackRelease(notes, stepTime, time, velocity);
+                    window.rhythmSynth.triggerAttackRelease(immediateNotes, stepTime, time, velocity);
                 } catch (e) {
-                    notes.forEach(n => { try { window.rhythmSynth.triggerAttackRelease(n, stepTime, time, velocity); } catch (err) {} });
+                    immediateNotes.forEach(n => { try { window.rhythmSynth.triggerAttackRelease(n, stepTime, time, velocity); } catch (err) {} });
                 }
+            }
 
-                // Restore volume after the step duration (approximate) to previous value
+            // Trigger sustained notes (attack now, release scheduled at their endStep)
+            if (sustainedNotes.length > 0) {
+                const nVoices = sustainedNotes.length;
+                const velocity = Math.max(0.05, 1 / nVoices);
                 try {
-                    setTimeout(() => {
-                        try {
-                            if (vNode) {
-                                if (vNode.volume !== undefined && vNode.volume.value !== undefined) vNode.volume.value = prevVol;
-                                else if (vNode.value !== undefined) vNode.value = prevVol;
-                            }
-                        } catch (e) {}
-                    }, stepTime * 1000 + 10);
-                } catch (e) {}
+                    window.rhythmSynth.triggerAttack(sustainedNotes, time, velocity);
+                } catch (e) {
+                    sustainedNotes.forEach(n => { try { window.rhythmSynth.triggerAttack(n, time, velocity); } catch (err) {} });
+                }
+            }
+
+            // Releases for span events that end on this step
+            const endingEvents = events.filter(ev => ev.endStep !== undefined && ev.endStep === value.step && (ev.startStep === undefined || ev.startStep !== ev.endStep));
+            if (endingEvents.length > 0) {
+                const notesToRelease = endingEvents.map(ev => window.rhythmNotes[ev.noteIndex]);
+                try {
+                    window.rhythmSynth.triggerRelease(notesToRelease, time + stepTime);
+                } catch (e) {
+                    notesToRelease.forEach(n => { try { window.rhythmSynth.triggerRelease(n, time + stepTime); } catch (err) {} });
+                }
             }
         }
         // Highlight rhythm current step
