@@ -164,52 +164,7 @@
                 </div>
             </div>
 
-            <div class="controls-section full-row">
-                <!-- <h3>Global Effects</h3> -->
-                <div class="effects-row">
-                    <div class="effect-group">
-                        <div class="effect-title">Distortion</div>
-                        <div class="knob-row">
-                            <div class="knob-block">
-                                <div class="knob" id="global-distortion" data-min="0" data-max="1" data-step="0.01" data-value="0"></div>
-                                <div class="sub">&nbsp;</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="effect-group">
-                        <div class="effect-title">Delay</div>
-                        <div class="knob-row">
-                            <div class="knob-block">
-                                <div class="knob" id="global-delay-time" data-min="0.01" data-max="1" data-step="0.01" data-value="0.3"></div>
-                                <div class="sub">Time</div>
-                            </div>
-                            <div class="knob-block">
-                                <div class="knob" id="global-delay-feedback" data-min="0" data-max="0.9" data-step="0.01" data-value="0.3"></div>
-                                <div class="sub">Feedback</div>
-                            </div>
-                            <div class="knob-block">
-                                <div class="knob" id="global-delay-wet" data-min="0" data-max="1" data-step="0.01" data-value="0"></div>
-                                <div class="sub">Wet</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="effect-group">
-                        <div class="effect-title">Reverb</div>
-                        <div class="knob-row">
-                            <div class="knob-block">
-                                <div class="knob" id="global-reverb-decay" data-min="0.1" data-max="10" data-step="0.1" data-value="2.5"></div>
-                                <div class="sub">Decay</div>
-                            </div>
-                            <div class="knob-block">
-                                <div class="knob" id="global-reverb-wet" data-min="0" data-max="1" data-step="0.01" data-value="0.3"></div>
-                                <div class="sub">Wet</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <!-- Global effects moved to bottom of page -->
         </div>
 
         <!-- Main content area - shows pads, keyboard, etc. based on active tab -->
@@ -259,6 +214,52 @@
                         <button class="bar-btn" data-bars="4">4</button>
                     </div>
                     <button id="clear-sequencer">Clear</button>
+                </div>
+            </div>
+        </div>
+        <!-- Global Effects (moved from top controls) -->
+        <div class="controls-section full-row" id="global-effects-bottom">
+            <div class="effects-row">
+                <div class="effect-group">
+                    <div class="effect-title">Distortion</div>
+                    <div class="knob-row">
+                        <div class="knob-block">
+                            <div class="knob" id="global-distortion" data-min="0" data-max="1" data-step="0.01" data-value="0"></div>
+                            <div class="sub">&nbsp;</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="effect-group">
+                    <div class="effect-title">Delay</div>
+                    <div class="knob-row">
+                        <div class="knob-block">
+                            <div class="knob" id="global-delay-time" data-min="0.01" data-max="1" data-step="0.01" data-value="0.3"></div>
+                            <div class="sub">Time</div>
+                        </div>
+                        <div class="knob-block">
+                            <div class="knob" id="global-delay-feedback" data-min="0" data-max="0.9" data-step="0.01" data-value="0.3"></div>
+                            <div class="sub">Feedback</div>
+                        </div>
+                        <div class="knob-block">
+                            <div class="knob" id="global-delay-wet" data-min="0" data-max="1" data-step="0.01" data-value="0"></div>
+                            <div class="sub">Wet</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="effect-group">
+                    <div class="effect-title">Reverb</div>
+                    <div class="knob-row">
+                        <div class="knob-block">
+                            <div class="knob" id="global-reverb-decay" data-min="0.1" data-max="10" data-step="0.1" data-value="2.5"></div>
+                            <div class="sub">Decay</div>
+                        </div>
+                        <div class="knob-block">
+                            <div class="knob" id="global-reverb-wet" data-min="0" data-max="1" data-step="0.01" data-value="0.3"></div>
+                            <div class="sub">Wet</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
