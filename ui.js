@@ -76,7 +76,12 @@ window.initSequencerGrid = function(config) {
             // Check if active - handle both discrete steps and note spans
             let isActive = false;
             if (isPolyphonic) {
-                isActive = track.events.some(ev => ev.step === step && ev.soundIndex === rowIndex);
+                // Support different event property names (soundIndex, noteIndex, etc.)
+                isActive = track.events.some(ev => {
+                    if (ev.step !== step) return false;
+                    // any event property other than 'step' that equals rowIndex counts
+                    return Object.keys(ev).some(k => k !== 'step' && ev[k] === rowIndex);
+                });
             } else {
                 // For monophonic tracks, check if this step falls within any note span
                 isActive = track.events.some(ev => 

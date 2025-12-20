@@ -6,6 +6,7 @@ window.currentStep = 0;
 window.bpm = 120;
 window.previousStep = -1;
 window.previousBassStep = -1;
+window.previousRhythmStep = -1;
 
 // Reusable function to highlight current step in any grid
 window.highlightCurrentStep = function(selector, current, previous) {
@@ -28,6 +29,9 @@ window.togglePlay = async function() {
         if (window.bassSynth) {
             window.bassSynth.triggerRelease();
         }
+        if (window.rhythmSynth) {
+            try { window.rhythmSynth.triggerRelease(); } catch (e) {}
+        }
         // TODO: Add release for rhythm and lead synths when implemented
         document.getElementById('play-pause').textContent = 'Play';
         // Clear current step highlight
@@ -41,6 +45,9 @@ window.togglePlay = async function() {
         // Clear current step highlight for bass
         document.querySelectorAll('.bass-step.current').forEach(btn => btn.classList.remove('current'));
         window.previousBassStep = -1;
+        // Clear rhythm highlights
+        document.querySelectorAll('.rhythm-step.current').forEach(btn => btn.classList.remove('current'));
+        window.previousRhythmStep = -1;
         window.previousStep = -1;
         window.currentStep = 0;
     } else {
@@ -95,13 +102,14 @@ window.setupTransportSchedule = function() {
                 
                 // If this is a single-step note, use triggerAttackRelease
                 if (event.startStep === event.endStep) {
-                    console.log(`Bass single note: start=${event.startStep}, end=${event.endStep}, note=${window.bassNotes[event.noteIndex]}`);
+                    // Bass single note event
                     window.bassSynth.triggerAttackRelease(freq, stepTime, time);
                 } else {
                     // Multi-step note: just attack, release will happen later
-                    console.log(`Bass span start: start=${event.startStep}, end=${event.endStep}, note=${window.bassNotes[event.noteIndex]}`);
+                    // Bass span start
                     window.bassSynth.triggerAttack(freq, time);
                 }
+                
             });
             
             // Check for notes that should end on this step (only for multi-step notes)
@@ -109,13 +117,67 @@ window.setupTransportSchedule = function() {
                 event.endStep === value.step && event.startStep !== event.endStep
             );
             if (endingNotes.length > 0) {
-                console.log(`Bass span end: start=${endingNotes[0].startStep}, end=${endingNotes[0].endStep}, note=${window.bassNotes[endingNotes[0].noteIndex]}`);
+                // Bass span end
                 // For monophonic bass, just release current note
                 window.bassSynth.triggerRelease(time + stepTime);
             }
         }        // Highlight bass current step
         window.highlightCurrentStep('.bass-step', value.step, window.previousBassStep);
         window.previousBassStep = value.step;
+        // Rhythm - play polyphonic events (chords) on this step (independent of bass events)
+        if (window.rhythmTrack && window.rhythmTrack.enabled && window.rhythmSynth) {
+            const rhythmEvents = window.rhythmTrack.events.filter(ev => ev.step === value.step);
+            if (rhythmEvents.length > 0) {
+                const notes = rhythmEvents.map(ev => window.rhythmNotes[ev.noteIndex]);
+                // Normalize chord loudness: apply a more aggressive attenuation per extra voice
+                // to avoid harsh summing/clipping when multiple voices play. This uses a
+                // configurable per-extra-voice attenuation (in dB).
+                const nVoices = notes.length;
+                const CHORD_ATTENUATION_DB_PER_EXTRA_VOICE = 10; // dB reduction per extra voice (increased)
+                const attenuationDb = nVoices > 1 ? -CHORD_ATTENUATION_DB_PER_EXTRA_VOICE * (nVoices - 1) : 0;
+
+                // Get volume node reference and current value
+                const vNode = window.rhythmChain && window.rhythmChain.volume;
+                let prevVol = 0;
+                try {
+                    if (vNode) {
+                        if (vNode.volume !== undefined && vNode.volume.value !== undefined) prevVol = vNode.volume.value;
+                        else if (vNode.value !== undefined) prevVol = vNode.value;
+                    }
+                } catch (e) { prevVol = window.controlState.rhythm.volume || 0; }
+
+                const appliedVol = prevVol + attenuationDb;
+                try {
+                    if (vNode) {
+                        if (vNode.volume !== undefined && vNode.volume.value !== undefined) vNode.volume.value = appliedVol;
+                        else if (vNode.value !== undefined) vNode.value = appliedVol;
+                    }
+                } catch (e) {}
+
+                // Scale velocity by number of voices to avoid clipping when multiple notes play
+                const velocity = Math.max(0.05, 1 / nVoices);
+                try {
+                    window.rhythmSynth.triggerAttackRelease(notes, stepTime, time, velocity);
+                } catch (e) {
+                    notes.forEach(n => { try { window.rhythmSynth.triggerAttackRelease(n, stepTime, time, velocity); } catch (err) {} });
+                }
+
+                // Restore volume after the step duration (approximate) to previous value
+                try {
+                    setTimeout(() => {
+                        try {
+                            if (vNode) {
+                                if (vNode.volume !== undefined && vNode.volume.value !== undefined) vNode.volume.value = prevVol;
+                                else if (vNode.value !== undefined) vNode.value = prevVol;
+                            }
+                        } catch (e) {}
+                    }, stepTime * 1000 + 10);
+                } catch (e) {}
+            }
+        }
+        // Highlight rhythm current step
+        window.highlightCurrentStep('.rhythm-step', value.step, window.previousRhythmStep);
+        window.previousRhythmStep = value.step;
         window.currentStep = (value.step + 1) % window.drumTrack.lengthSteps;
     }, events);
     window.part.loop = true;

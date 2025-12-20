@@ -3,29 +3,22 @@
 // Initialize everything
 window.initApp = function() {
     if (window.appInitialized) {
-        console.log('App already initialized, skipping');
         return;
     }
-    console.log('Starting initApp');
+    // Starting initApp
     window.initDrumPads();
-    console.log('Drum pads initialized');
     window.initDrumGrid();
-    console.log('Drum grid initialized');
+    // Rhythm (poly synth)
+    if (typeof window.initRhythmGrid === 'function') { window.initRhythmGrid(); }
+    if (typeof window.initRhythmKeyboard === 'function') { window.initRhythmKeyboard(); }
     window.initBassGrid();
-    console.log('Bass grid initialized');
     window.initBassKeyboard();
-    console.log('Bass keyboard initialized');
     window.initTabs();
-    console.log('Tabs initialized');
     window.initControls();
-    console.log('Controls initialized');
     window.initEventListeners();
-    console.log('Event listeners initialized');
     window.setupTransportSchedule();
-    console.log('Transport schedule set up');
     window.updateBPM();
-    console.log('BPM updated');
-    console.log('App initialization complete');
+    // App initialization complete
     window.appInitialized = true;
 };
 

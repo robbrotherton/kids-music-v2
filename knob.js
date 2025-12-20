@@ -140,7 +140,7 @@
 
     function initAll(){
         document.querySelectorAll('.knob').forEach(el => {
-            try{ makeKnob(el); }catch(e){ console.error('knob init', e); }
+            try{ makeKnob(el); }catch(e){ }
         });
     }
 

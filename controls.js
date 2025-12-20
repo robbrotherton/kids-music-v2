@@ -41,6 +41,139 @@ window.controlState = {
         reverbDecay: 2.5,
         reverbWet: 0
     }
+    ,
+    // Rhythm controls (polyphonic instrument)
+    rhythm: {
+        waveType: 'sine',
+        waveGainDb: { sine: 0, triangle: 0, sawtooth: 0, square: 0 },
+        volume: 0,
+        filterFreq: 2000,
+        filterQ: 1,
+        attack: 0.01,
+        decay: 0.1,
+        sustain: 0.8,
+        release: 0.1,
+        vibratoDepth: 0,
+        vibratoRate: 5,
+        tremoloDepth: 0,
+        tremoloRate: 5,
+        wahDepth: 0,
+        wahRate: 5
+    }
+};
+
+// Rhythm controls (mirrors bass controls but scoped to rhythmChain/rhythmSynth)
+window.initRhythmControls = function() {
+    const waveSelect = document.getElementById('rhythm-wave-type');
+    if (waveSelect) {
+        try { waveSelect.value = window.controlState.rhythm.waveType; } catch(e){}
+        waveSelect.addEventListener('change', (e) => {
+            const val = (e && (e.detail && e.detail.value)) || (e.target && e.target.value) || waveSelect.value || waveSelect.getAttribute('value');
+            window.controlState.rhythm.waveType = val;
+            try {
+                if (window.rhythmSynth && window.rhythmSynth.set) {
+                    window.rhythmSynth.set({ oscillator: { type: val } });
+                }
+            } catch (err) { console.warn('[controls] could not set rhythm oscillator.type', err); }
+            try {
+                let baseDb = (window.controlState.rhythm.waveGainDb && window.controlState.rhythm.waveGainDb[val] !== undefined) ? window.controlState.rhythm.waveGainDb[val] : 0;
+                const userDb = (window.controlState.rhythm && window.controlState.rhythm.volume) ? window.controlState.rhythm.volume : 0;
+                if ((baseDb + userDb) > MAX_COMBINED_DB) baseDb = MAX_COMBINED_DB - userDb;
+                if (window.rhythmChain && window.rhythmChain.waveGain) {
+                    if (window.rhythmChain.waveGain.volume !== undefined && window.rhythmChain.waveGain.volume.value !== undefined) window.rhythmChain.waveGain.volume.value = baseDb;
+                    else if (window.rhythmChain.waveGain.value !== undefined) window.rhythmChain.waveGain.value = baseDb;
+                }
+                if (window.rhythmChain && window.rhythmChain.volume) {
+                    if (window.rhythmChain.volume.volume !== undefined && window.rhythmChain.volume.volume.value !== undefined) window.rhythmChain.volume.volume.value = window.controlState.rhythm.volume;
+                    else if (window.rhythmChain.volume.value !== undefined) window.rhythmChain.volume.value = window.controlState.rhythm.volume;
+                }
+            } catch (err) { console.warn('[controls] error applying rhythm wave gain', err); }
+        });
+    }
+
+    // Volume
+    const vol = document.getElementById('rhythm-volume');
+    if (vol) {
+        vol.value = window.controlState.rhythm.volume;
+        vol.addEventListener('input', (e) => {
+            window.controlState.rhythm.volume = parseFloat(e.target.value);
+            try {
+                if (window.rhythmChain && window.rhythmChain.volume) {
+                    if (window.rhythmChain.volume.volume !== undefined && window.rhythmChain.volume.volume.value !== undefined) window.rhythmChain.volume.volume.value = window.controlState.rhythm.volume;
+                    else if (window.rhythmChain.volume.value !== undefined) window.rhythmChain.volume.value = window.controlState.rhythm.volume;
+                }
+            } catch (err) { console.warn('[controls] error setting rhythm volume', err); }
+        });
+    }
+
+    // Filter freq
+    const ff = document.getElementById('rhythm-filter-freq');
+    if (ff) {
+        ff.value = window.controlState.rhythm.filterFreq;
+        ff.addEventListener('input', (e)=>{
+            window.controlState.rhythm.filterFreq = parseFloat(e.target.value);
+            if (window.rhythmChain && window.rhythmChain.filter) window.rhythmChain.filter.frequency.value = window.controlState.rhythm.filterFreq;
+        });
+    }
+
+    // Filter Q
+    const fq = document.getElementById('rhythm-filter-q');
+    if (fq) {
+        fq.value = window.controlState.rhythm.filterQ;
+        fq.addEventListener('input', (e)=>{
+            window.controlState.rhythm.filterQ = parseFloat(e.target.value);
+            if (window.rhythmChain && window.rhythmChain.filter) window.rhythmChain.filter.Q.value = window.controlState.rhythm.filterQ;
+        });
+    }
+
+    // ADSR
+    ['attack','decay','sustain','release'].forEach(param=>{
+        const s = document.getElementById(`rhythm-${param}`);
+        if (s) {
+            s.value = window.controlState.rhythm[param];
+            s.addEventListener('input',(e)=>{
+                window.controlState.rhythm[param] = parseFloat(e.target.value);
+                if (window.rhythmSynth && window.rhythmSynth.set) {
+                    try { window.rhythmSynth.set({ envelope: { [param]: window.controlState.rhythm[param] } }); } catch(e){}
+                }
+            });
+        }
+    });
+
+    // Effects: reuse existing effect slider mapping where present
+    const effectSliders = [
+        { id: 'rhythm-vibrato-depth', stateKey: 'vibratoDepth', effect: 'vibrato', param: 'depth' },
+        { id: 'rhythm-vibrato-rate', stateKey: 'vibratoRate', effect: 'vibrato', param: 'frequency' },
+        { id: 'rhythm-tremolo-depth', stateKey: 'tremoloDepth', effect: 'tremolo', param: 'depth' },
+        { id: 'rhythm-tremolo-rate', stateKey: 'tremoloRate', effect: 'tremolo', param: 'frequency' },
+        { id: 'rhythm-wah-depth', stateKey: 'wahDepth', effect: 'wah', param: 'depth' },
+        { id: 'rhythm-wah-rate', stateKey: 'wahRate', effect: 'wah', param: 'gain' }
+    ];
+    effectSliders.forEach(({id,stateKey,effect,param})=>{
+        const slider = document.getElementById(id);
+        if (!slider) return;
+        slider.value = window.controlState.rhythm[stateKey];
+        slider.addEventListener('input',(e)=>{
+            window.controlState.rhythm[stateKey] = parseFloat(e.target.value);
+            const v = window.controlState.rhythm[stateKey];
+            if (effect === 'vibrato' && window.rhythmChain && window.rhythmChain.vibrato) {
+                if (param === 'depth') try { window.rhythmChain.vibrato.depth.value = v; } catch(e){ window.rhythmChain.vibrato.depth = v; }
+                if (param === 'frequency') try { window.rhythmChain.vibrato.frequency.value = v; } catch(e){ window.rhythmChain.vibrato.frequency = v; }
+            } else if (effect === 'tremolo' && window.rhythmChain && window.rhythmChain.tremoloLFO && window.rhythmChain.tremoloGain) {
+                if (param === 'depth') {
+                    try { window.rhythmChain.tremoloLFO.min = Math.max(0,1-v); window.rhythmChain.tremoloLFO.max = 1; } catch(e){}
+                }
+                if (param === 'frequency') try { window.rhythmChain.tremoloLFO.frequency.value = v; } catch(e){ window.rhythmChain.tremoloLFO.frequency = v; }
+            } else if (effect === 'wah' && window.rhythmChain && window.rhythmChain.wahLFO && window.rhythmChain.wahFilter) {
+                if (param === 'depth') {
+                    const center = 600; const range = 600;
+                    window.rhythmChain.wahLFO.min = Math.max(50, center - v * range);
+                    window.rhythmChain.wahLFO.max = Math.min(5000, center + v * range);
+                }
+                if (param === 'gain') try { window.rhythmChain.wahLFO.frequency.value = v; } catch(e){ window.rhythmChain.wahLFO.frequency = v; }
+            }
+        });
+    });
 };
 
 // Maximum allowed combined boost (wave base gain + user volume) to avoid clipping
@@ -48,10 +181,13 @@ const MAX_COMBINED_DB = 6; // dB
 
 // Initialize controls
 window.initControls = function() {
-    console.log('Initializing controls...');
+    // Initializing controls
 
     // Bass controls
     initBassControls();
+
+    // Rhythm controls
+    initRhythmControls();
 
     // Global controls
     initGlobalControls();
@@ -59,7 +195,7 @@ window.initControls = function() {
     // Apply initial values
     updateAllControls();
 
-    console.log('Controls initialized');
+    // Controls initialized
 };
 
 // Bass controls
@@ -72,7 +208,7 @@ window.initBassControls = function() {
             // some events may not provide target.value, support component's property or detail
             const val = (e && (e.detail && e.detail.value)) || (e.target && e.target.value) || waveSelect.value || waveSelect.getAttribute('value');
             window.controlState.bass.waveType = val;
-            console.log('[controls] bass wave set to', val);
+            
             try {
                 // Try direct assignment first, then the more robust `set` API for Tone objects
                 if (window.bassSynth && window.bassSynth.oscillator && typeof window.bassSynth.oscillator.type !== 'undefined') {
@@ -82,12 +218,12 @@ window.initBassControls = function() {
                 if (window.bassSynth && typeof window.bassSynth.set === 'function') {
                     try { window.bassSynth.set({ oscillator: { type: val } }); } catch (e) {}
                 }
-                console.log('[controls] oscillator type set to', val, 'on bassSynth');
+                
                 // Some environments / Tone.js versions don't update the running oscillator
                 // instance reliably via property assignment. Replace the synth instance
                 // and reconnect it through the existing chain to guarantee the change.
-                try { if (typeof window.replaceBassSynth === 'function') window.replaceBassSynth(val); } catch (e) { console.warn('[controls] replaceBassSynth failed', e); }
-            } catch (err) { console.warn('[controls] could not set oscillator.type', err); }
+                try { if (typeof window.replaceBassSynth === 'function') window.replaceBassSynth(val); } catch (e) { }
+            } catch (err) { }
             // apply per-wave base gain (dB) to dedicated waveGain, keep user volume separate
             try {
                 let baseDb = (window.controlState.bass.waveGainDb && window.controlState.bass.waveGainDb[val] !== undefined) ? window.controlState.bass.waveGainDb[val] : 0;
@@ -96,22 +232,22 @@ window.initBassControls = function() {
                     const userDb = (window.controlState.bass && window.controlState.bass.volume) ? window.controlState.bass.volume : 0;
                     if ((baseDb + userDb) > MAX_COMBINED_DB) {
                         const allowedBase = MAX_COMBINED_DB - userDb;
-                        console.warn('[controls] combined wave+user volume too high, reducing baseDb from', baseDb, 'to', allowedBase);
+                        
                         baseDb = allowedBase;
                     }
                 } catch (e) {}
                 if (window.bassChain && window.bassChain.waveGain) {
                     if (window.bassChain.waveGain.volume !== undefined && window.bassChain.waveGain.volume.value !== undefined) {
                         window.bassChain.waveGain.volume.value = baseDb;
-                        console.log('[controls] applied waveGain (waveGain.volume.value)=', baseDb, 'for wave', val);
+                        
                     } else if (window.bassChain.waveGain.value !== undefined) {
                         window.bassChain.waveGain.value = baseDb;
-                        console.log('[controls] applied waveGain (waveGain.value)=', baseDb, 'for wave', val);
+                        
                     } else if (typeof window.bassChain.waveGain === 'number') {
                         window.bassChain.waveGain = baseDb;
-                        console.log('[controls] applied waveGain (number)=', baseDb, 'for wave', val);
+                        
                     } else {
-                        console.warn('[controls] unknown bassChain.waveGain shape', window.bassChain.waveGain);
+                        
                     }
                 }
                 // ensure user volume is preserved
@@ -124,7 +260,7 @@ window.initBassControls = function() {
                         window.bassChain.volume = window.controlState.bass.volume;
                     }
                 }
-            } catch (err) { console.warn('[controls] error applying base wave gain', err); }
+            } catch (err) { }
         });
     }
 
@@ -136,7 +272,7 @@ window.initBassControls = function() {
             window.controlState.bass.glideEnabled = !!e.target.checked;
             try {
                 if (window.bassSynth) window.bassSynth.portamento = window.controlState.bass.glideEnabled ? window.controlState.bass.glideTime : 0.0;
-            } catch (err) { console.warn('[controls] could not set portamento', err); }
+            } catch (err) { }
         });
     }
 
@@ -158,7 +294,7 @@ window.initBassControls = function() {
                         window.bassChain.volume = userDb;
                     }
                 }
-            } catch (err) { console.warn('[controls] error setting volume from slider', err); }
+            } catch (err) { }
         });
     }
 
@@ -298,7 +434,7 @@ window.initGlobalControls = function() {
                 } else {
                     // Try setting delay time/feedback dynamically (use .value for Tone.Signal)
                     const v = window.controlState.global[stateKey];
-                    console.log(`Setting delay ${param} to ${v}`);
+                    // setting delay param
                     if (param === 'delayTime') {
                         if (window.globalEffects.delay && window.globalEffects.delay.delayTime) {
                             window.globalEffects.delay.delayTime.value = v;
@@ -369,7 +505,7 @@ window.initGlobalControls = function() {
             slider.addEventListener('input', (e) => {
                 window.controlState.global[stateKey] = parseFloat(e.target.value);
                 if (param === 'decay') {
-                    console.log(`Setting reverb ${param} to ${window.controlState.global[stateKey]}`);
+                    // setting reverb param
                     window.globalEffects.reverb[param] = window.controlState.global[stateKey];
                 } else if (param === 'wet') {
                     // Control wet/dry mix with gain nodes
@@ -395,24 +531,19 @@ window.updateAllControls = function() {
         // clamp combined base + user volume to avoid excessive boost
         try {
             const userDb = (window.controlState.bass && window.controlState.bass.volume) ? window.controlState.bass.volume : 0;
-            if ((baseDb + userDb) > MAX_COMBINED_DB) {
+                if ((baseDb + userDb) > MAX_COMBINED_DB) {
                 const allowedBase = MAX_COMBINED_DB - userDb;
-                console.warn('[controls] init combined wave+user volume too high, reducing baseDb from', baseDb, 'to', allowedBase);
                 baseDb = allowedBase;
             }
         } catch (e) {}
         if (window.bassChain && window.bassChain.waveGain) {
-            if (window.bassChain.waveGain.volume !== undefined && window.bassChain.waveGain.volume.value !== undefined) {
+                if (window.bassChain.waveGain.volume !== undefined && window.bassChain.waveGain.volume.value !== undefined) {
                 window.bassChain.waveGain.volume.value = baseDb;
-                console.log('[controls] init applied waveGain (waveGain.volume.value)=', baseDb, 'for wave', wave);
             } else if (window.bassChain.waveGain.value !== undefined) {
                 window.bassChain.waveGain.value = baseDb;
-                console.log('[controls] init applied waveGain (waveGain.value)=', baseDb, 'for wave', wave);
             } else if (typeof window.bassChain.waveGain === 'number') {
                 window.bassChain.waveGain = baseDb;
-                console.log('[controls] init applied waveGain (number)=', baseDb, 'for wave', wave);
             } else {
-                console.warn('[controls] unknown bassChain.waveGain shape at init', window.bassChain.waveGain);
             }
         }
         // set user volume
@@ -420,13 +551,10 @@ window.updateAllControls = function() {
         if (window.bassChain && window.bassChain.volume) {
             if (window.bassChain.volume.volume !== undefined && window.bassChain.volume.volume.value !== undefined) {
                 window.bassChain.volume.volume.value = userDb;
-                console.log('[controls] init applied user volume (volume.volume.value)=', userDb);
             } else if (window.bassChain.volume.value !== undefined) {
                 window.bassChain.volume.value = userDb;
-                console.log('[controls] init applied user volume (volume.value)=', userDb);
             } else if (typeof window.bassChain.volume === 'number') {
                 window.bassChain.volume = userDb;
-                console.log('[controls] init applied user volume (number)=', userDb);
             }
         }
     } catch (err) {
@@ -466,6 +594,68 @@ window.updateAllControls = function() {
             try { window.bassChain.wahLFO.frequency.value = window.controlState.bass.wahRate; } catch (e) { window.bassChain.wahLFO.frequency = window.controlState.bass.wahRate; }
         }
     }
+
+    // Rhythm (polyphonic) - apply independent instrument settings if present
+    try {
+        if (window.rhythmSynth) {
+            try { if (window.rhythmSynth.set) window.rhythmSynth.set({ oscillator: { type: window.controlState.rhythm.waveType } }); else if (window.rhythmSynth.oscillator) window.rhythmSynth.oscillator.type = window.controlState.rhythm.waveType; } catch (e) {}
+        }
+        // Apply per-wave base gain clamp + user volume to rhythmChain
+        const rWave = window.controlState.rhythm.waveType;
+        let rBaseDb = (window.controlState.rhythm.waveGainDb && window.controlState.rhythm.waveGainDb[rWave] !== undefined) ? window.controlState.rhythm.waveGainDb[rWave] : 0;
+        try {
+            const rUserDb = (window.controlState.rhythm && window.controlState.rhythm.volume) ? window.controlState.rhythm.volume : 0;
+            if ((rBaseDb + rUserDb) > MAX_COMBINED_DB) {
+                rBaseDb = MAX_COMBINED_DB - rUserDb;
+            }
+        } catch (e) {}
+        if (window.rhythmChain && window.rhythmChain.waveGain) {
+            if (window.rhythmChain.waveGain.volume !== undefined && window.rhythmChain.waveGain.volume.value !== undefined) {
+                window.rhythmChain.waveGain.volume.value = rBaseDb;
+            } else if (window.rhythmChain.waveGain.value !== undefined) {
+                window.rhythmChain.waveGain.value = rBaseDb;
+            }
+        }
+        // set user volume
+        const rUserDb2 = window.controlState.rhythm.volume;
+        if (window.rhythmChain && window.rhythmChain.volume) {
+            if (window.rhythmChain.volume.volume !== undefined && window.rhythmChain.volume.volume.value !== undefined) {
+                window.rhythmChain.volume.volume.value = rUserDb2;
+            } else if (window.rhythmChain.volume.value !== undefined) {
+                window.rhythmChain.volume.value = rUserDb2;
+            }
+        }
+        // Filter and envelope
+        if (window.rhythmChain && window.rhythmChain.filter) {
+            window.rhythmChain.filter.frequency.value = window.controlState.rhythm.filterFreq;
+            window.rhythmChain.filter.Q.value = window.controlState.rhythm.filterQ;
+        }
+        if (window.rhythmSynth && window.rhythmSynth.envelope) {
+            try { window.rhythmSynth.envelope.attack = window.controlState.rhythm.attack; } catch (e) {}
+            try { window.rhythmSynth.envelope.decay = window.controlState.rhythm.decay; } catch (e) {}
+            try { window.rhythmSynth.envelope.sustain = window.controlState.rhythm.sustain; } catch (e) {}
+            try { window.rhythmSynth.envelope.release = window.controlState.rhythm.release; } catch (e) {}
+        }
+        if (window.rhythmChain) {
+            if (window.rhythmChain.vibrato) {
+                try { window.rhythmChain.vibrato.depth.value = window.controlState.rhythm.vibratoDepth; } catch (e) { window.rhythmChain.vibrato.depth = window.controlState.rhythm.vibratoDepth; }
+                try { window.rhythmChain.vibrato.frequency.value = window.controlState.rhythm.vibratoRate; } catch (e) { window.rhythmChain.vibrato.frequency = window.controlState.rhythm.vibratoRate; }
+            }
+            if (window.rhythmChain.tremoloLFO && window.rhythmChain.tremoloGain) {
+                try { window.rhythmChain.tremoloLFO.min = Math.max(0, 1 - window.controlState.rhythm.tremoloDepth); } catch (e) {}
+                try { window.rhythmChain.tremoloLFO.max = 1; } catch (e) {}
+                try { window.rhythmChain.tremoloLFO.frequency.value = window.controlState.rhythm.tremoloRate; } catch (e) { window.rhythmChain.tremoloLFO.frequency = window.controlState.rhythm.tremoloRate; }
+            }
+            if (window.rhythmChain.wahLFO && window.rhythmChain.wahFilter) {
+                const v = window.controlState.rhythm.wahDepth;
+                const center = 600;
+                const range = 600;
+                window.rhythmChain.wahLFO.min = Math.max(50, center - v * range);
+                window.rhythmChain.wahLFO.max = Math.min(5000, center + v * range);
+                try { window.rhythmChain.wahLFO.frequency.value = window.controlState.rhythm.wahRate; } catch (e) { window.rhythmChain.wahLFO.frequency = window.controlState.rhythm.wahRate; }
+            }
+        }
+    } catch (e) { console.warn('[controls] error applying rhythm controls', e); }
 
     // Global
     window.globalEffects.distortion.distortion = window.controlState.global.distortion;
