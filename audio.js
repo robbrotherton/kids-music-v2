@@ -9,7 +9,13 @@ Tone.context.lookAhead = 0.05; // Slightly increase to avoid timing issues
 
 // Global effects chain
 window.globalEffects = {
+    // core distortion node (kept for compatibility with existing controls)
     distortion: new Tone.Distortion({ distortion: 0 }),
+    // helper nodes for a softer, more controllable distortion chain
+    distortionPreGain: new Tone.Gain(1), // apply drive before the waveshaper
+    distortionPostFilter: new Tone.Filter({ type: 'lowpass', frequency: 8000 }), // roll off harsh highs
+    distortionDryGain: new Tone.Gain(1),
+    distortionWetGain: new Tone.Gain(0.0),
     delay: new Tone.FeedbackDelay({ delayTime: 0.3, feedback: 0.3 }),
     delayDryGain: new Tone.Gain(1),
     delayWetGain: new Tone.Gain(0),
@@ -58,13 +64,27 @@ delayInput.connect(window.globalEffects.delay);
 // Delay output -> wet gain
 window.globalEffects.delay.connect(window.globalEffects.delayWetGain);
 
-// Mix delay dry/wet -> distortion
+// Mix delay dry/wet -> go into distortion/dry split so we can do wet/dry distortion
 const delayOutput = new Tone.Gain();
 window.globalEffects.delayDryGain.connect(delayOutput);
 window.globalEffects.delayWetGain.connect(delayOutput);
 
-delayOutput.chain(
-    window.globalEffects.distortion,
+// Split into dry and wet distortion paths
+// dry path -> dry gain
+delayOutput.connect(window.globalEffects.distortionDryGain);
+
+// wet path -> preGain -> distortion -> postFilter -> wetGain
+delayOutput.connect(window.globalEffects.distortionPreGain);
+window.globalEffects.distortionPreGain.connect(window.globalEffects.distortion);
+window.globalEffects.distortion.connect(window.globalEffects.distortionPostFilter);
+window.globalEffects.distortionPostFilter.connect(window.globalEffects.distortionWetGain);
+
+// Mix wet+dry -> compressor -> limiter -> destination
+const distortionMix = new Tone.Gain();
+window.globalEffects.distortionDryGain.connect(distortionMix);
+window.globalEffects.distortionWetGain.connect(distortionMix);
+
+distortionMix.chain(
     window.globalEffects.compressor,
     window.globalEffects.limiter,
     Tone.Destination

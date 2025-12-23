@@ -33,6 +33,7 @@ window.controlState = {
     // Global controls
     global: {
         distortion: 0,
+        distortionWet: 0.3,
         delayTime: 0.3,
         delayFeedback: 0.3,
         delayWet: 0,
@@ -428,7 +429,30 @@ window.initGlobalControls = function() {
         distortionSlider.value = window.controlState.global.distortion;
         distortionSlider.addEventListener('input', (e) => {
             window.controlState.global.distortion = parseFloat(e.target.value);
+            // Set waveshaper amount
             window.globalEffects.distortion.distortion = window.controlState.global.distortion;
+            // Map slider to a gentle pre-gain (drive) curve to add harmonic content without huge level jumps
+            try {
+                const v = window.controlState.global.distortion;
+                const preGain = 1 + Math.pow(v, 2) * 5; // maps 0->1, 1->6 (gentle exponential)
+                if (window.globalEffects && window.globalEffects.distortionPreGain && window.globalEffects.distortionPreGain.gain) window.globalEffects.distortionPreGain.gain.value = preGain;
+            } catch (err) {}
+        });
+    }
+
+    // Distortion wet/dry mix
+    const distortionWetEl = document.getElementById('global-distortion-wet');
+    if (distortionWetEl) {
+        distortionWetEl.value = window.controlState.global.distortionWet;
+        distortionWetEl.addEventListener('input', (e) => {
+            window.controlState.global.distortionWet = parseFloat(e.target.value);
+            const wet = window.controlState.global.distortionWet;
+            try {
+                if (window.globalEffects && window.globalEffects.distortionWetGain && window.globalEffects.distortionDryGain) {
+                    window.globalEffects.distortionWetGain.gain.value = wet;
+                    window.globalEffects.distortionDryGain.gain.value = 1 - wet;
+                }
+            } catch (err) {}
         });
     }
 
@@ -688,7 +712,21 @@ window.updateAllControls = function() {
     } catch (e) { console.warn('[controls] error applying rhythm controls', e); }
 
     // Global
+    // Distortion amount (waveshaper) and mapped pre-gain
     window.globalEffects.distortion.distortion = window.controlState.global.distortion;
+    try {
+        const v = window.controlState.global.distortion || 0;
+        const preGain = 1 + Math.pow(v, 2) * 5;
+        if (window.globalEffects && window.globalEffects.distortionPreGain && window.globalEffects.distortionPreGain.gain) window.globalEffects.distortionPreGain.gain.value = preGain;
+    } catch (e) {}
+    // Apply wet/dry mix for distortion
+    try {
+        const wet = (window.controlState.global.distortionWet !== undefined) ? window.controlState.global.distortionWet : 0;
+        if (window.globalEffects && window.globalEffects.distortionWetGain && window.globalEffects.distortionDryGain) {
+            window.globalEffects.distortionWetGain.gain.value = wet;
+            window.globalEffects.distortionDryGain.gain.value = 1 - wet;
+        }
+    } catch (e) {}
     // Set delay wet/dry mix
     const delayWet = window.controlState.global.delayWet;
     window.globalEffects.delayDryGain.gain.value = 1 - delayWet;
