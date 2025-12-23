@@ -17,6 +17,7 @@
     display: none; /* Hidden by default, shown by JavaScript */
     overflow-x: auto;
     overflow-y: auto;
+    max-height: 360px; /* limit vertical size and allow scrolling when many rows */
 }
 
 .sequencer-row {
