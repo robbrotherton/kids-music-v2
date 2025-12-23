@@ -433,12 +433,12 @@ window.initTabs = function() {
                 const controlsPanel = document.getElementById('controls-panel');
                 // Global shared effects should always be visible at the bottom
                 if (shared) shared.style.display = 'flex';
-                // Drum-specific controls visible only on drums
+                // Keep drum-specific controls hidden for now
+                if (drumControls) drumControls.style.display = 'none';
+                // Show/hide the instrument controls panel for non-drum tabs
                 if (tab.dataset.tab === 'drums') {
-                    if (drumControls) drumControls.style.display = 'block';
                     if (controlsPanel) controlsPanel.style.display = 'none';
                 } else {
-                    if (drumControls) drumControls.style.display = 'none';
                     if (controlsPanel) controlsPanel.style.display = 'block';
                 }
             } catch (e) {}
