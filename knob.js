@@ -75,29 +75,32 @@
         // render initial
         render();
 
-        // pointer handling
+        // pointer handling (horizontal-drag value control)
         let dragging = false;
+        let _startX = 0;
+        let _startValue = 0;
+        // pixels across which the full range is swept; can be tuned via data-sensitivity attribute
+        const DEFAULT_SENS = 200;
+
         function pointerDown(e){
             dragging = true;
             el.setPointerCapture?.(e.pointerId);
-            pointerMove(e);
+            _startX = e.clientX;
+            _startValue = el._value;
         }
+
         function pointerMove(e){
             if (!dragging && e.type === 'pointermove') return;
-            const rect = el.getBoundingClientRect();
-            const cx = rect.left + rect.width/2;
-            const cy = rect.top + rect.height/2;
-            const dx = e.clientX - cx;
-            const dy = e.clientY - cy;
-            let ang = Math.atan2(dy, dx) * 180 / Math.PI; // -180..180
-            // convert to -180..180; knob angle zero at right; clamp to ANGLE_MIN/ANGLE_MAX
-            // use ang as-is
-            // Normalize so 0 is to the right; already is
-            // Clamp
-            ang = clamp(ang, ANGLE_MIN, ANGLE_MAX);
-            const v = angleToValue(ang, el._min, el._max);
-            setValue(v, true);
+            if (dragging){
+                const sens = parseFloat(el.dataset.sensitivity ?? DEFAULT_SENS) || DEFAULT_SENS;
+                const dx = e.clientX - _startX;
+                const range = el._max - el._min;
+                const v = _startValue + (dx / sens) * range;
+                setValue(v, true);
+                return;
+            }
         }
+
         function pointerUp(e){
             dragging = false;
             try{ el.releasePointerCapture?.(e.pointerId); }catch(e){}
