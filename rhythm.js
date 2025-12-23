@@ -88,6 +88,5 @@ window.initRhythmGrid = function() {
 
 // Clear rhythm track
 window.clearRhythmTrack = function() {
-    window.rhythmTrack.events = [];
-    document.querySelectorAll('.rhythm-step').forEach(btn => btn.classList.remove('active'));
+    window.clearTrack(window.rhythmTrack, 'rhythm-step');
 };

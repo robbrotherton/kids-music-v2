@@ -84,9 +84,24 @@ window.clearDrumTrack = function() {
 
 // Clear sequencer (all tracks)
 window.clearSequencer = function() {
-    window.clearDrumTrack();
-    window.clearBassTrack();
-    // TODO: Add other tracks here as they are implemented
-    // window.clearRhythmTrack();
-    // window.clearLeadTrack();
+    // Clear only the track for the currently active tab/instrument.
+    const active = window.activeInstrument || (document.querySelector('.tab.active') && document.querySelector('.tab.active').dataset.tab) || 'drums';
+    try {
+        if (active === 'drums') {
+            window.clearDrumTrack();
+        } else if (active === 'bass') {
+            window.clearBassTrack();
+        } else if (active === 'rhythm') {
+            if (typeof window.clearRhythmTrack === 'function') window.clearRhythmTrack();
+        } else if (active === 'lead') {
+            if (typeof window.clearLeadTrack === 'function') window.clearLeadTrack();
+        } else {
+            // Fallback: clear drum track
+            window.clearDrumTrack();
+        }
+    } catch (e) {
+        // If anything fails, at least clear drum and bass to avoid leaving UI in inconsistent state
+        try { window.clearDrumTrack(); } catch (err) {}
+        try { window.clearBassTrack(); } catch (err) {}
+    }
 };

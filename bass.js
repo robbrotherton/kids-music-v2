@@ -63,6 +63,5 @@ window.toggleBassStep = function(e, spanData) {
 
 // Clear bass track
 window.clearBassTrack = function() {
-    window.bassTrack.events = [];
-    document.querySelectorAll('.bass-step').forEach(btn => btn.classList.remove('active'));
+    window.clearTrack(window.bassTrack, 'bass-step');
 };

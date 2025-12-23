@@ -57,6 +57,5 @@ window.toggleLeadStep = function(e, spanData) {
 
 // Clear lead track
 window.clearLeadTrack = function() {
-    window.leadTrack.events = [];
-    document.querySelectorAll('.lead-step').forEach(btn => btn.classList.remove('active'));
+    window.clearTrack(window.leadTrack, 'lead-step');
 };

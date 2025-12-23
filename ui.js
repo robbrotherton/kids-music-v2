@@ -165,9 +165,11 @@ window.initSequencerGrid = function(config) {
 window.clearTrack = function(track, cellClass) {
     // Clear events
     track.events = [];
-    // Clear UI
-    document.querySelectorAll(`.${cellClass}.active`).forEach(step => {
+    // Clear UI - remove active and any span-related classes so styling fully resets
+    document.querySelectorAll(`.${cellClass}`).forEach(step => {
         step.classList.remove('active');
+        step.classList.remove('span-start');
+        step.classList.remove('span-cont');
     });
 };
 
