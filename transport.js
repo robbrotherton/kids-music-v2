@@ -7,6 +7,7 @@ window.bpm = 120;
 window.previousStep = -1;
 window.previousBassStep = -1;
 window.previousRhythmStep = -1;
+window.previousLeadStep = -1;
 
 // Reusable function to highlight current step in any grid
 window.highlightCurrentStep = function(selector, current, previous) {
@@ -32,6 +33,9 @@ window.togglePlay = async function() {
         if (window.rhythmSynth) {
             try { window.rhythmSynth.triggerRelease(); } catch (e) {}
         }
+        if (window.leadSynth) {
+            try { window.leadSynth.triggerRelease(); } catch (e) {}
+        }
         // TODO: Add release for rhythm and lead synths when implemented
         document.getElementById('play-pause').textContent = 'Play';
         // Clear current step highlight
@@ -48,6 +52,9 @@ window.togglePlay = async function() {
         // Clear rhythm highlights
         document.querySelectorAll('.rhythm-step.current').forEach(btn => btn.classList.remove('current'));
         window.previousRhythmStep = -1;
+        // Clear lead highlights
+        document.querySelectorAll('.lead-step.current').forEach(btn => btn.classList.remove('current'));
+        window.previousLeadStep = -1;
         window.previousStep = -1;
         window.currentStep = 0;
     } else {
@@ -124,6 +131,26 @@ window.setupTransportSchedule = function() {
         }        // Highlight bass current step
         window.highlightCurrentStep('.bass-step', value.step, window.previousBassStep);
         window.previousBassStep = value.step;
+        // Lead - handle long notes (monophonic)
+        if (window.leadTrack && window.leadTrack.enabled && window.leadSynth) {
+            const startingNotesL = window.leadTrack.events.filter(event => event.startStep === value.step);
+            startingNotesL.forEach(event => {
+                const freq = Tone.Frequency(window.leadNotes[event.noteIndex]).toFrequency();
+                if (event.startStep === event.endStep) {
+                    window.leadSynth.triggerAttackRelease(freq, stepTime, time);
+                } else {
+                    window.leadSynth.triggerAttack(freq, time);
+                }
+            });
+
+            const endingNotesL = window.leadTrack.events.filter(event => event.endStep === value.step && event.startStep !== event.endStep);
+            if (endingNotesL.length > 0) {
+                window.leadSynth.triggerRelease(time + stepTime);
+            }
+        }
+        // Highlight lead current step
+        window.highlightCurrentStep('.lead-step', value.step, window.previousLeadStep);
+        window.previousLeadStep = value.step;
         // Rhythm - support both point events ({step}) and span events ({startStep,endStep})
         if (window.rhythmTrack && window.rhythmTrack.enabled && window.rhythmSynth) {
             const events = window.rhythmTrack.events || [];

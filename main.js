@@ -13,6 +13,9 @@ window.initApp = function() {
     if (typeof window.initRhythmKeyboard === 'function') { window.initRhythmKeyboard(); }
     window.initBassGrid();
     window.initBassKeyboard();
+    // Lead (monophonic)
+    if (typeof window.initLeadGrid === 'function') { window.initLeadGrid(); }
+    if (typeof window.initLeadKeyboard === 'function') { window.initLeadKeyboard(); }
     window.initTabs();
     window.initControls();
     window.initEventListeners();

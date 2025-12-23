@@ -215,6 +215,16 @@ window.replaceBassSynth = function(type) {
 window.drumSounds = [window.drumSampler, window.drumSampler, window.drumSampler, window.drumSampler];
 
 // Rhythm (polyphonic) synth: up to 3 voices for chords
+
+    // Lead synth (monophonic) - create at top-level so it's available on startup
+    try {
+        window.leadSynth = new Tone.Synth({
+            oscillator: { type: 'sawtooth' },
+            envelope: { attack: 0.01, decay: 0.1, sustain: 0.7, release: 0.2 }
+        });
+        window.leadChain = window.createSynthChain(window.leadSynth);
+        try { if (window.leadChain && window.leadChain.volume && window.leadChain.volume.volume && window.leadChain.volume.volume.value !== undefined) window.leadChain.volume.volume.value = -6; else if (window.leadChain && window.leadChain.volume && window.leadChain.volume.value !== undefined) window.leadChain.volume.value = -6; } catch (e) {}
+    } catch (e) {}
 try {
     window.rhythmSynth = new Tone.PolySynth(Tone.Synth, 3);
     try { if (window.rhythmSynth && typeof window.rhythmSynth.set === 'function') window.rhythmSynth.set({ oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0.8, release: 0.1 } }); } catch (e) {}
@@ -283,6 +293,8 @@ window.testRhythmSound = async function(notes = ['C3','E3','G3'], duration = '8n
             window.rhythmSynth.triggerAttackRelease(notes, duration, undefined, velocity);
             return;
         } catch (e) { }
+
+        // Lead synth (monophonic) - sits alongside bass and rhythm
         // fallback: trigger individually with scaled velocity
         try {
             notes.forEach(n => window.rhythmSynth.triggerAttackRelease(n, duration, undefined, velocity));

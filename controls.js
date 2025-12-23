@@ -61,6 +61,25 @@ window.controlState = {
         wahDepth: 0,
         wahRate: 5
     }
+    ,
+    // Lead controls (monophonic)
+    lead: {
+        waveType: 'sawtooth',
+        waveGainDb: { sine: 0, triangle: 0, sawtooth: 0, square: 0 },
+        volume: -6,
+        filterFreq: 3000,
+        filterQ: 1,
+        attack: 0.01,
+        decay: 0.1,
+        sustain: 0.7,
+        release: 0.2,
+        vibratoDepth: 0,
+        vibratoRate: 5,
+        tremoloDepth: 0,
+        tremoloRate: 5,
+        wahDepth: 0,
+        wahRate: 5
+    }
 };
 
 // Instrument lookup helpers
@@ -223,6 +242,9 @@ window.initRhythmControls = function() {
         });
     });
 };
+
+// Lead controls (mirrors bass controls but scoped to leadChain/leadSynth)
+/* lead control initialization removed to reuse shared bass controls for lead (switch via active tab) */
 
 // Maximum allowed combined boost (wave base gain + user volume) to avoid clipping
 const MAX_COMBINED_DB = 6; // dB
@@ -752,4 +774,76 @@ window.updateAllControls = function() {
         try { if (window.bassChain.tremoloLFO) window.bassChain.tremoloLFO.type = modShape; } catch (e) {}
         try { if (window.bassChain.wahLFO) window.bassChain.wahLFO.type = modShape; } catch (e) {}
     }
+    // Lead (monophonic) - apply independent instrument settings if present
+    try {
+        if (window.leadSynth) {
+            try { if (window.leadSynth.set) window.leadSynth.set({ oscillator: { type: window.controlState.lead.waveType } }); else if (window.leadSynth.oscillator) window.leadSynth.oscillator.type = window.controlState.lead.waveType; } catch (e) {}
+        }
+        // Apply per-wave base gain clamp + user volume to leadChain
+        const lWave = window.controlState.lead.waveType;
+        let lBaseDb = (window.controlState.lead.waveGainDb && window.controlState.lead.waveGainDb[lWave] !== undefined) ? window.controlState.lead.waveGainDb[lWave] : 0;
+        try {
+            const lUserDb = (window.controlState.lead && window.controlState.lead.volume) ? window.controlState.lead.volume : 0;
+            if ((lBaseDb + lUserDb) > MAX_COMBINED_DB) {
+                lBaseDb = MAX_COMBINED_DB - lUserDb;
+            }
+        } catch (e) {}
+        if (window.leadChain && window.leadChain.waveGain) {
+            if (window.leadChain.waveGain.volume !== undefined && window.leadChain.waveGain.volume.value !== undefined) {
+                window.leadChain.waveGain.volume.value = lBaseDb;
+            } else if (window.leadChain.waveGain.value !== undefined) {
+                window.leadChain.waveGain.value = lBaseDb;
+            }
+        }
+        // set user volume
+        const lUserDb2 = window.controlState.lead.volume;
+        if (window.leadChain && window.leadChain.volume) {
+            if (window.leadChain.volume.volume !== undefined && window.leadChain.volume.volume.value !== undefined) {
+                window.leadChain.volume.volume.value = lUserDb2;
+            } else if (window.leadChain.volume.value !== undefined) {
+                window.leadChain.volume.value = lUserDb2;
+            }
+        }
+        // Filter and envelope
+        if (window.leadChain && window.leadChain.filter) {
+            window.leadChain.filter.frequency.value = window.controlState.lead.filterFreq;
+            window.leadChain.filter.Q.value = window.controlState.lead.filterQ;
+        }
+        if (window.leadSynth) {
+            try {
+                if (typeof window.leadSynth.set === 'function') {
+                    window.leadSynth.set({ envelope: {
+                        attack: window.controlState.lead.attack,
+                        decay: window.controlState.lead.decay,
+                        sustain: window.controlState.lead.sustain,
+                        release: window.controlState.lead.release
+                    }});
+                } else if (window.leadSynth.envelope) {
+                    try { window.leadSynth.envelope.attack = window.controlState.lead.attack; } catch (e) {}
+                    try { window.leadSynth.envelope.decay = window.controlState.lead.decay; } catch (e) {}
+                    try { window.leadSynth.envelope.sustain = window.controlState.lead.sustain; } catch (e) {}
+                    try { window.leadSynth.envelope.release = window.controlState.lead.release; } catch (e) {}
+                }
+            } catch (e) {}
+        }
+        if (window.leadChain) {
+            if (window.leadChain.vibrato) {
+                try { window.leadChain.vibrato.depth.value = window.controlState.lead.vibratoDepth; } catch (e) { window.leadChain.vibrato.depth = window.controlState.lead.vibratoDepth; }
+                try { window.leadChain.vibrato.frequency.value = window.controlState.lead.vibratoRate; } catch (e) { window.leadChain.vibrato.frequency = window.controlState.lead.vibratoRate; }
+            }
+            if (window.leadChain.tremoloLFO && window.leadChain.tremoloGain) {
+                try { window.leadChain.tremoloLFO.min = Math.max(0, 1 - window.controlState.lead.tremoloDepth); } catch (e) {}
+                try { window.leadChain.tremoloLFO.max = 1; } catch (e) {}
+                try { window.leadChain.tremoloLFO.frequency.value = window.controlState.lead.tremoloRate; } catch (e) { window.leadChain.tremoloLFO.frequency = window.controlState.lead.tremoloRate; }
+            }
+            if (window.leadChain.wahLFO && window.leadChain.wahFilter) {
+                const v = window.controlState.lead.wahDepth;
+                const center = 600;
+                const range = 600;
+                window.leadChain.wahLFO.min = Math.max(50, center - v * range);
+                window.leadChain.wahLFO.max = Math.min(5000, center + v * range);
+                try { window.leadChain.wahLFO.frequency.value = window.controlState.lead.wahRate; } catch (e) { window.leadChain.wahLFO.frequency = window.controlState.lead.wahRate; }
+            }
+        }
+    } catch (e) { console.warn('[controls] error applying lead controls', e); }
 };
