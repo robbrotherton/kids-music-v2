@@ -24,71 +24,86 @@
     overflow-x: visible; /* allow span visuals to overflow without shifting layout */
     padding-bottom: 0em;
     justify-content: center;
+    position: relative; /* needed for per-row overlay positioning */
 }
 
 .sequencer-cell {
-    border: 1px solid #ccc;
-    background-color: white;
+    background-color: transparent;
     cursor: pointer;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
     border-radius: 3px;
-    transition: all 0.1s;
+    transition: background-color 0.1s, border-color 0.1s;
     min-width: 30px;
     min-height: 30px;
     flex-shrink: 0;
     margin-right: 2px;
-}
-
-.sequencer-cell.active {
-    background-color: #2196F3;
-}
-
-/* Span styling */
-.sequencer-cell.span-start {
-    border-top-left-radius: 4px;
-    border-bottom-left-radius: 4px;
     position: relative;
-    z-index: 2;
+    z-index: 2; /* sit above the span overlay */
+}
+
+/* Visual: only change the fill of grid squares. Keep classes for logic unchanged. */
+.sequencer-cell.active,
+.sequencer-cell.span-start,
+.sequencer-cell.span-cont {
+    background-color: #2196F3;
+    /* keep border color unchanged so outlines remain the light default */
+}
+
+/* For span visuals keep the sequencing classes but only hide the internal borders
+   between contiguous span cells so fills look continuous while external outlines remain. */
+.sequencer-cell.span-start {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-right-color: transparent;
 }
 .sequencer-cell.span-cont {
-    position: relative;
-    z-index: 2;
-}
-.sequencer-cell.span-cont::before {
-    content: '';
-    position: absolute;
-    left: -8px; /* visual extension width */
-    top: 0;
-    bottom: 0;
-    width: 8px;
-    background-color: inherit;
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-    z-index: 3;
-}
-.sequencer-cell.span-start.active, .sequencer-cell.span-cont.active, .sequencer-cell.span-cont.active::before {
-    background-color: #2196F3;
+    /* border-left-color: transparent; */
 }
 
-.sequencer-cell.beat { border: 2px solid black; }
+.sequencer-cell.beat {
+    border-width: 2px;
+    border-color: black;
+}
 
 .sequencer-cell.current {
-    border: 2px solid #f44336;
+    border-color: #f44336;
     box-shadow: 0 0 5px #f44336;
+}
+
+/* Per-row span overlay (drawn behind cells). Uses JS to paint connectors. */
+.row-span-overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1; /* behind cells (cells are z-index:2) */
+}
+.span-connector {
+    position: absolute;
+    top: 2px;
+    height: calc(100% - 4px);
+    background-color: #2196F3;
+    border-radius: 3px;
+    opacity: 1;
 }
 
 .bass-step {
     width: 30px;
     height: 30px;
-    border: 1px solid #ccc;
-    background-color: white;
+    background-color: transparent;
     cursor: pointer;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
     border-radius: 3px;
-    transition: all 0.1s;
+    transition: background-color 0.1s, border-color 0.1s;
     flex-shrink: 0;
     margin-right: 2px;
 }
 
-.bass-step.active { background-color: #2196F3; }
+.bass-step.active { background-color: #2196F3; /* keep border color unchanged */ }
 
 #bar-selector { display: flex; gap: 0.3125em; }
 .bar-btn { padding: 0.625em; min-width: 3.125em; background-color: #ddd; border: none; border-radius: 5px; font-size: 1.2em; }

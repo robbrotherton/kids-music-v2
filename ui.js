@@ -47,6 +47,10 @@ window.initSequencerGrid = function(config) {
     for (let rowIndex = 0; rowIndex < rowLabels.length; rowIndex++) {
         const row = document.createElement('div');
         row.className = `sequencer-row ${rowClass}`;
+        // create per-row overlay for span connectors (drawn behind cells)
+        const overlay = document.createElement('div');
+        overlay.className = 'row-span-overlay';
+        row.appendChild(overlay);
 
         if (hasLabels) {
             const label = document.createElement('div');
@@ -151,6 +155,8 @@ window.initSequencerGrid = function(config) {
             }
         }
         grid.appendChild(row);
+        // Draw any existing spans for this row
+        try { window.drawSpanOverlayForRow(row, track, cellClass); } catch (e) {}
     }
 
     // Global mouseup to handle drag end outside grid
@@ -159,6 +165,54 @@ window.initSequencerGrid = function(config) {
             window.dragState.isDragging = false;
         });
     }
+};
+
+// Draw span connector rectangles for a single row element using the track data.
+window.drawSpanOverlayForRow = function(rowElement, track, cellClass) {
+    if (!rowElement) return;
+    const overlay = rowElement.querySelector('.row-span-overlay');
+    if (!overlay) return;
+    // clear existing connectors
+    overlay.innerHTML = '';
+
+    // Determine this row's note/sound index from any cell in it
+    const sampleCell = rowElement.querySelector(`.${cellClass}`);
+    if (!sampleCell) return;
+    // noteIndex for monophonic rows is in data-note; for polyphonic rows it's data-sound
+    const noteKey = sampleCell.dataset.note !== undefined ? 'note' : (sampleCell.dataset.sound !== undefined ? 'sound' : 'note');
+    const rowNoteIndex = parseInt(sampleCell.dataset[noteKey]);
+
+    // For each span event on the track that belongs to this row, draw a connector
+    track.events.forEach(ev => {
+        const start = ev.startStep;
+        const end = ev.endStep;
+        const evIndex = ev.noteIndex ?? ev.note ?? ev.sound ?? ev.soundIndex;
+        if (start === undefined || end === undefined) return;
+        if (evIndex === undefined) return;
+        // Only draw spans that belong to this row
+        if (evIndex !== rowNoteIndex) return;
+
+        const startCell = rowElement.querySelector(`.${cellClass}[data-step="${start}"]`);
+        const endCell = rowElement.querySelector(`.${cellClass}[data-step="${end}"]`);
+        if (!startCell || !endCell) return;
+
+        const left = startCell.offsetLeft;
+        const width = (endCell.offsetLeft + endCell.offsetWidth) - left;
+
+        const rect = document.createElement('div');
+        rect.className = 'span-connector';
+        rect.style.left = left + 'px';
+        rect.style.width = Math.max(0, width) + 'px';
+        overlay.appendChild(rect);
+    });
+};
+
+// Redraw overlays for the row that contains the given cell (helper)
+window.redrawOverlayForCell = function(cellElement, track, cellClass) {
+    if (!cellElement) return;
+    const row = cellElement.closest('.sequencer-row');
+    if (!row) return;
+    window.drawSpanOverlayForRow(row, track, cellClass);
 };
 
 // Generic track clearing
@@ -170,6 +224,14 @@ window.clearTrack = function(track, cellClass) {
         step.classList.remove('active');
         step.classList.remove('span-start');
         step.classList.remove('span-cont');
+    });
+    // Clear any overlays for grids containing this cellClass
+    document.querySelectorAll(`.${cellClass}`).forEach(step => {
+        const row = step.closest('.sequencer-row');
+        if (row) {
+            const overlay = row.querySelector('.row-span-overlay');
+            if (overlay) overlay.innerHTML = '';
+        }
     });
 };
 
@@ -233,16 +295,24 @@ window.toggleSpanStep = function(e, spanData, config) {
 
     if (overlapping.length > 0) {
         // Remove overlapping events
-        track.events = track.events.filter(ev => !(ev[eventKey] === noteIndex && ev.startStep <= endStep && ev.endStep >= startStep));
-        // Clear UI for all steps in the clicked range
-        for (let s = startStep; s <= endStep; s++) {
-            const selector = cellClass ? `.${cellClass}[data-step="${s}"][data-note="${noteIndex}"]` : `[data-step="${s}"][data-note="${noteIndex}"]`;
-            document.querySelectorAll(selector).forEach(btn => {
-                btn.classList.remove('active');
-                btn.classList.remove('span-start');
-                btn.classList.remove('span-cont');
-            });
-        }
+        const toRemove = track.events.filter(ev => (ev[eventKey] === noteIndex && ev.startStep <= endStep && ev.endStep >= startStep));
+        track.events = track.events.filter(ev => !toRemove.includes(ev));
+        // Clear UI for the full ranges of removed events (not just the clicked sub-range)
+        toRemove.forEach(ev => {
+            const rs = ev.startStep;
+            const re = ev.endStep;
+            for (let s = rs; s <= re; s++) {
+                const selector = cellClass ? `.${cellClass}[data-step="${s}"][data-note="${noteIndex}"]` : `[data-step="${s}"][data-note="${noteIndex}"]`;
+                document.querySelectorAll(selector).forEach(btn => {
+                    btn.classList.remove('active');
+                    btn.classList.remove('span-start');
+                    btn.classList.remove('span-cont');
+                });
+            }
+        });
+        // redraw overlay for this row
+        const sample = document.querySelector(cellClass ? `.${cellClass}[data-note="${noteIndex}"]` : `[data-note="${noteIndex}"]`);
+        try { if (sample) window.redrawOverlayForCell(sample, track, cellClass); } catch (e) {}
         return;
     }
 
@@ -270,6 +340,9 @@ window.toggleSpanStep = function(e, spanData, config) {
             }
         });
     }
+    // redraw overlay for this row
+    const sample = document.querySelector(cellClass ? `.${cellClass}[data-note="${noteIndex}"]` : `[data-note="${noteIndex}"]`);
+    try { if (sample) window.redrawOverlayForCell(sample, track, cellClass); } catch (e) {}
 };
 
 // Polyphonic span toggle: allow creating/removing spans per-note without removing
@@ -288,17 +361,25 @@ window.togglePolySpanStep = function(e, spanData, config) {
     const overlapping = track.events.filter(ev => ev[eventKey] === noteIndex && ev.startStep !== undefined && ev.startStep <= endStep && ev.endStep >= startStep);
 
     if (overlapping.length > 0) {
-        // Remove overlapping spans for this note
-        track.events = track.events.filter(ev => !(ev[eventKey] === noteIndex && ev.startStep !== undefined && ev.startStep <= endStep && ev.endStep >= startStep));
-        // Clear UI for those steps for this note only
-        for (let s = startStep; s <= endStep; s++) {
-            const selector = cellClass ? `.${cellClass}[data-step="${s}"][data-sound="${noteIndex}"]` : `[data-step="${s}"][data-sound="${noteIndex}"]`;
-            document.querySelectorAll(selector).forEach(btn => {
-                btn.classList.remove('active');
-                btn.classList.remove('span-start');
-                btn.classList.remove('span-cont');
-            });
-        }
+        // Remove overlapping spans for this note (may be larger than clicked range)
+        const toRemove = track.events.filter(ev => (ev[eventKey] === noteIndex && ev.startStep !== undefined && ev.startStep <= endStep && ev.endStep >= startStep));
+        track.events = track.events.filter(ev => !toRemove.includes(ev));
+        // Clear UI for the full ranges of removed spans for this note
+        toRemove.forEach(ev => {
+            const rs = ev.startStep;
+            const re = ev.endStep;
+            for (let s = rs; s <= re; s++) {
+                const selector = cellClass ? `.${cellClass}[data-step="${s}"][data-sound="${noteIndex}"]` : `[data-step="${s}"][data-sound="${noteIndex}"]`;
+                document.querySelectorAll(selector).forEach(btn => {
+                    btn.classList.remove('active');
+                    btn.classList.remove('span-start');
+                    btn.classList.remove('span-cont');
+                });
+            }
+        });
+        // redraw overlay for this row
+        const sample = document.querySelector(cellClass ? `.${cellClass}[data-sound="${noteIndex}"]` : `[data-sound="${noteIndex}"]`);
+        try { if (sample) window.redrawOverlayForCell(sample, track, cellClass); } catch (e) {}
         return;
     }
 
@@ -311,6 +392,9 @@ window.togglePolySpanStep = function(e, spanData, config) {
             if (s === startStep) btn.classList.add('span-start'); else btn.classList.add('span-cont');
         });
     }
+    // redraw overlay for this row (polyphonic)
+    const sample = document.querySelector(cellClass ? `.${cellClass}[data-sound="${noteIndex}"]` : `[data-sound="${noteIndex}"]`);
+    try { if (sample) window.redrawOverlayForCell(sample, track, cellClass); } catch (e) {}
 };
 
 // Tab switching
