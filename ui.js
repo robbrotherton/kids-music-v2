@@ -100,22 +100,30 @@ window.initSequencerGrid = function(config) {
             if (isActive) stepBtn.classList.add('active');
 
             // Attach event listeners
-            if (isPolyphonic) {
-                stepBtn.addEventListener('click', toggleFunction);
-                // Enable drag-to-span for polyphonic grids: start drag on mousedown and complete on mouseup
-                stepBtn.addEventListener('mousedown', (e) => {
+                if (isPolyphonic) {
+                // Use pointer events for touch/mouse support
+                stepBtn.addEventListener('pointerup', (e) => toggleFunction(e));
+                // Enable drag-to-span for polyphonic grids: start drag on pointerdown and complete on pointerup
+                stepBtn.addEventListener('pointerdown', (e) => {
+                    e.preventDefault();
+                    // Do NOT capture the pointer here - capturing would prevent pointerenter
+                    // events on other cells and break drag-across-cell behavior.
                     window.dragState.isDragging = true;
                     window.dragState.startStep = step;
                     window.dragState.startNote = rowIndex;
                     window.dragState.currentStep = step;
                     window.dragState.currentNote = rowIndex;
+                    // remember how to finalize this drag if pointerup happens outside
+                    window.dragState.mode = 'poly';
+                    window.dragState.toggleConfig = { track, eventKey: 'noteIndex', dataKey: 'sound', cellClass };
+                    window.dragState.noteIndex = rowIndex;
                 });
-                stepBtn.addEventListener('mouseenter', (e) => {
+                stepBtn.addEventListener('pointerenter', (e) => {
                     if (window.dragState.isDragging && window.dragState.startNote === rowIndex) {
                         window.dragState.currentStep = step;
                     }
                 });
-                stepBtn.addEventListener('mouseup', (e) => {
+                stepBtn.addEventListener('pointerup', (e) => {
                     if (window.dragState.isDragging) {
                         const start = Math.min(window.dragState.startStep, window.dragState.currentStep);
                         const end = Math.max(window.dragState.startStep, window.dragState.currentStep);
@@ -124,21 +132,27 @@ window.initSequencerGrid = function(config) {
                         window.dragState.isDragging = false;
                     }
                 });
+                stepBtn.addEventListener('pointercancel', () => { window.dragState.isDragging = false; });
             } else {
                 // Monophonic: support click for single toggle, drag for spans
-                stepBtn.addEventListener('mousedown', (e) => {
+                stepBtn.addEventListener('pointerdown', (e) => {
+                    e.preventDefault();
+                    // Do not capture the pointer so drag can move across cells
                     window.dragState.isDragging = true;
                     window.dragState.startStep = step;
                     window.dragState.startNote = rowIndex;
                     window.dragState.currentStep = step;
                     window.dragState.currentNote = rowIndex;
+                    window.dragState.mode = 'mono';
+                    window.dragState.toggleConfig = { track, dataKey: 'note', eventKey: 'noteIndex', cellClass };
+                    window.dragState.noteIndex = rowIndex;
                 });
-                stepBtn.addEventListener('mouseenter', (e) => {
+                stepBtn.addEventListener('pointerenter', (e) => {
                     if (window.dragState.isDragging && window.dragState.startNote === rowIndex) {
                         window.dragState.currentStep = step;
                     }
                 });
-                stepBtn.addEventListener('mouseup', (e) => {
+                stepBtn.addEventListener('pointerup', (e) => {
                     if (window.dragState.isDragging) {
                         const start = Math.min(window.dragState.startStep, window.dragState.currentStep);
                         const end = Math.max(window.dragState.startStep, window.dragState.currentStep);
@@ -146,6 +160,7 @@ window.initSequencerGrid = function(config) {
                         window.dragState.isDragging = false;
                     }
                 });
+                stepBtn.addEventListener('pointercancel', () => { window.dragState.isDragging = false; });
             }
 
             row.appendChild(stepBtn);
@@ -159,11 +174,43 @@ window.initSequencerGrid = function(config) {
         try { window.drawSpanOverlayForRow(row, track, cellClass); } catch (e) {}
     }
 
-    // Global mouseup to handle drag end outside grid
-    if (!isPolyphonic) {
-        document.addEventListener('mouseup', () => {
+    // Add global handlers (one-time) to handle pointermove and finalize drag if pointerup occurs outside
+    if (!window._sequencerGlobalPointerHandlersAdded) {
+        window._sequencerGlobalPointerHandlersAdded = true;
+        document.addEventListener('pointermove', (ev) => {
+            if (!window.dragState || !window.dragState.isDragging) return;
+            try {
+                const el = document.elementFromPoint(ev.clientX, ev.clientY);
+                if (!el) return;
+                const cell = el.closest('.sequencer-cell');
+                if (cell && cell.dataset && cell.dataset.step !== undefined) {
+                    const step = parseInt(cell.dataset.step);
+                    // Only update currentStep if the note/sound matches the started row
+                    const noteAttr = cell.dataset.note !== undefined ? 'note' : (cell.dataset.sound !== undefined ? 'sound' : 'note');
+                    const noteIdx = parseInt(cell.dataset[noteAttr]);
+                    if (noteIdx === window.dragState.startNote) {
+                        window.dragState.currentStep = step;
+                    }
+                }
+            } catch (e) {}
+        }, { passive: true });
+
+        document.addEventListener('pointerup', (ev) => {
+            if (!window.dragState || !window.dragState.isDragging) return;
+            try {
+                const start = Math.min(window.dragState.startStep, window.dragState.currentStep);
+                const end = Math.max(window.dragState.startStep, window.dragState.currentStep);
+                const noteIndex = window.dragState.noteIndex;
+                if (window.dragState.mode === 'poly') {
+                    window.togglePolySpanStep(null, { startStep: start, endStep: end, noteIndex }, window.dragState.toggleConfig);
+                } else {
+                    window.toggleSpanStep(null, { startStep: start, endStep: end, noteIndex }, window.dragState.toggleConfig);
+                }
+            } catch (e) {}
             window.dragState.isDragging = false;
         });
+
+        document.addEventListener('pointercancel', () => { if (window.dragState) window.dragState.isDragging = false; });
     }
 };
 

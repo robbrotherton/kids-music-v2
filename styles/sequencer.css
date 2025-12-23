@@ -43,6 +43,22 @@
     z-index: 2; /* sit above the span overlay */
 }
 
+/* Disable default touch gestures on interactive controls so pointer events work reliably,
+   and prevent text selection / tap highlight on touch devices. */
+.sequencer-cell,
+.bass-step,
+.drum-pad,
+.piano-key {
+    touch-action: none;
+    -ms-touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+}
+
 /* Visual: only change the fill of grid squares. Keep classes for logic unchanged. */
 .sequencer-cell.active,
 .sequencer-cell.span-start,

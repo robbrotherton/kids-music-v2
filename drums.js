@@ -19,7 +19,8 @@ window.initDrumPads = function() {
         pad.className = 'drum-pad';
         pad.textContent = padLabels[i];
         pad.dataset.sound = i;
-        pad.addEventListener('click', window.playDrumPad);
+        // Use pointerdown for immediate touch/mouse response and to support touch capture
+        pad.addEventListener('pointerdown', window.playDrumPad);
         drumPads.appendChild(pad);
     }
     // Drum pads created

@@ -47,19 +47,27 @@ window.createPianoKeyboard = function(options) {
             key.style.justifyContent = 'center';
             key.style.paddingBottom = '8px';
 
-            // Add event listeners
-            key.addEventListener('mousedown', (e) => {
+            // Add pointer event listeners (works for mouse & touch)
+            key.addEventListener('pointerdown', (e) => {
                 e.preventDefault();
+                key.setPointerCapture?.(e.pointerId);
                 key.classList.add('active');
                 if (onKeyDown) onKeyDown(key.dataset.note, key.dataset.frequency, instrument);
             });
 
-            key.addEventListener('mouseup', () => {
+            key.addEventListener('pointerup', (e) => {
+                try { key.releasePointerCapture?.(e.pointerId); } catch (err) {}
                 key.classList.remove('active');
                 if (onKeyUp) onKeyUp(key.dataset.note, key.dataset.frequency, instrument);
             });
 
-            key.addEventListener('mouseleave', () => {
+            key.addEventListener('pointerleave', (e) => {
+                // pointerleave may fire on touch cancel; ensure release
+                key.classList.remove('active');
+                if (onKeyUp) onKeyUp(key.dataset.note, key.dataset.frequency, instrument);
+            });
+
+            key.addEventListener('pointercancel', (e) => {
                 key.classList.remove('active');
                 if (onKeyUp) onKeyUp(key.dataset.note, key.dataset.frequency, instrument);
             });
@@ -108,20 +116,27 @@ window.createPianoKeyboard = function(options) {
                 blackKey.style.fontSize = '9px';
                 blackKey.textContent = blackNote;
 
-                // Add event listeners
-                blackKey.addEventListener('mousedown', (e) => {
+                // Add pointer event listeners
+                blackKey.addEventListener('pointerdown', (e) => {
                     e.preventDefault();
                     e.stopPropagation(); // Prevent triggering white key
+                    blackKey.setPointerCapture?.(e.pointerId);
                     blackKey.classList.add('active');
                     if (onKeyDown) onKeyDown(blackKey.dataset.note, blackKey.dataset.frequency, instrument);
                 });
 
-                blackKey.addEventListener('mouseup', () => {
+                blackKey.addEventListener('pointerup', (e) => {
+                    try { blackKey.releasePointerCapture?.(e.pointerId); } catch (err) {}
                     blackKey.classList.remove('active');
                     if (onKeyUp) onKeyUp(blackKey.dataset.note, blackKey.dataset.frequency, instrument);
                 });
 
-                blackKey.addEventListener('mouseleave', () => {
+                blackKey.addEventListener('pointerleave', (e) => {
+                    blackKey.classList.remove('active');
+                    if (onKeyUp) onKeyUp(blackKey.dataset.note, blackKey.dataset.frequency, instrument);
+                });
+
+                blackKey.addEventListener('pointercancel', (e) => {
                     blackKey.classList.remove('active');
                     if (onKeyUp) onKeyUp(blackKey.dataset.note, blackKey.dataset.frequency, instrument);
                 });
