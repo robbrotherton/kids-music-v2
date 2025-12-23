@@ -26,17 +26,22 @@ window.togglePlay = async function() {
             window.part = null;
         }
         Tone.Transport.stop();
-        // Release any currently playing synths
-        if (window.bassSynth) {
-            window.bassSynth.triggerRelease();
+        // Release any currently playing synths immediately (use Tone.now() where supported)
+        function _safeRelease(s) {
+            if (!s) return;
+            try {
+                const now = (typeof Tone !== 'undefined' && Tone.now) ? Tone.now() : undefined;
+                // Prefer releaseAll if available (PolySynth may expose this)
+                try { if (s.releaseAll && typeof s.releaseAll === 'function') { s.releaseAll(now); return; } } catch (e) {}
+                // Fallback: call triggerRelease with undefined notes and a time to release all voices
+                try { if (s.triggerRelease && typeof s.triggerRelease === 'function') { if (now !== undefined) { s.triggerRelease(undefined, now); } else { s.triggerRelease(); } return; } } catch (e) {}
+                // Additional fallback attempts
+                try { if (s.triggerReleaseAll && typeof s.triggerReleaseAll === 'function') { s.triggerReleaseAll(now); return; } } catch (e) {}
+            } catch (err) {}
         }
-        if (window.rhythmSynth) {
-            try { window.rhythmSynth.triggerRelease(); } catch (e) {}
-        }
-        if (window.leadSynth) {
-            try { window.leadSynth.triggerRelease(); } catch (e) {}
-        }
-        // TODO: Add release for rhythm and lead synths when implemented
+        _safeRelease(window.bassSynth);
+        _safeRelease(window.rhythmSynth);
+        _safeRelease(window.leadSynth);
         document.getElementById('play-pause').textContent = 'Play';
         // Clear current step highlight
         if (window.previousStep !== -1 && window.drumButtons) {
