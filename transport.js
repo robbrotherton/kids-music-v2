@@ -9,6 +9,19 @@ window.previousBassStep = -1;
 window.previousRhythmStep = -1;
 window.previousLeadStep = -1;
 
+// Public helper to immediately release any sounding notes for a synth/voice.
+window.safeReleaseSynth = function(s) {
+    if (!s) return;
+    try {
+        const now = (typeof Tone !== 'undefined' && Tone.now) ? Tone.now() : undefined;
+        try { if (s.releaseAll && typeof s.releaseAll === 'function') { s.releaseAll(now); return; } } catch (e) {}
+        try { if (s.triggerRelease && typeof s.triggerRelease === 'function') { if (now !== undefined) { s.triggerRelease(undefined, now); } else { s.triggerRelease(); } return; } } catch (e) {}
+        try { if (s.triggerReleaseAll && typeof s.triggerReleaseAll === 'function') { s.triggerReleaseAll(now); return; } } catch (e) {}
+        // Last resort: disconnect and reconnect to stop sound
+        try { if (s.disconnect) { s.disconnect(); if (s.connect) s.connect(window.globalEffectsInput); } } catch (e) {}
+    } catch (err) {}
+};
+
 // Reusable function to highlight current step in any grid
 window.highlightCurrentStep = function(selector, current, previous) {
     if (previous !== -1) {

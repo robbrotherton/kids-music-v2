@@ -91,10 +91,13 @@ window.clearSequencer = function() {
             window.clearDrumTrack();
         } else if (active === 'bass') {
             window.clearBassTrack();
+            try { if (window.safeReleaseSynth) window.safeReleaseSynth(window.bassSynth); } catch (e) {}
         } else if (active === 'rhythm') {
             if (typeof window.clearRhythmTrack === 'function') window.clearRhythmTrack();
+            try { if (window.safeReleaseSynth) window.safeReleaseSynth(window.rhythmSynth); } catch (e) {}
         } else if (active === 'lead') {
             if (typeof window.clearLeadTrack === 'function') window.clearLeadTrack();
+            try { if (window.safeReleaseSynth) window.safeReleaseSynth(window.leadSynth); } catch (e) {}
         } else {
             // Fallback: clear drum track
             window.clearDrumTrack();
