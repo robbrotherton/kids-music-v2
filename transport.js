@@ -34,9 +34,8 @@ window.highlightCurrentStep = function(selector, current, previous) {
 window.togglePlay = async function() {
     if (window.isPlaying) {
         if (window.part) {
-            window.part.stop();
-            window.part.dispose();
-            window.part = null;
+            // stop the scheduled part but keep it around to avoid recreation timing issues
+            try { window.part.stop(); } catch (e) {}
         }
         Tone.Transport.stop();
         // Release any currently playing synths immediately (use Tone.now() where supported)
@@ -118,53 +117,38 @@ window.setupTransportSchedule = function() {
                 }
             });
         }
-        // Bass - handle long notes
+        // Bass - handle long notes using triggerAttackRelease for reliable scheduling
         if (window.bassTrack.enabled && window.bassSynth) {
-            // Check for notes that should start on this step
-            const startingNotes = window.bassTrack.events.filter(event => event.startStep === value.step);
-            startingNotes.forEach(event => {
-                const freq = Tone.Frequency(window.bassNotes[event.noteIndex]).toFrequency();
-                
-                // If this is a single-step note, use triggerAttackRelease
-                if (event.startStep === event.endStep) {
-                    // Bass single note event
-                    window.bassSynth.triggerAttackRelease(freq, stepTime, time);
-                } else {
-                    // Multi-step note: just attack, release will happen later
-                    // Bass span start
-                    window.bassSynth.triggerAttack(freq, time);
+            const stepDur = stepTime; // seconds per 16th
+            const startingNotes = window.bassTrack.events.filter(ev => ev.startStep === value.step);
+            startingNotes.forEach(ev => {
+                const freq = Tone.Frequency(window.bassNotes[ev.noteIndex]).toFrequency();
+                const durSteps = (ev.endStep !== undefined ? (ev.endStep - ev.startStep + 1) : 1);
+                const dur = stepDur * durSteps;
+                try {
+                    window.bassSynth.triggerAttackRelease(freq, dur, time);
+                } catch (e) {
+                    try { window.bassSynth.triggerAttack(freq, time); window.bassSynth.triggerRelease(time + dur); } catch (err) {}
                 }
-                
             });
-            
-            // Check for notes that should end on this step (only for multi-step notes)
-            const endingNotes = window.bassTrack.events.filter(event => 
-                event.endStep === value.step && event.startStep !== event.endStep
-            );
-            if (endingNotes.length > 0) {
-                // Bass span end
-                // For monophonic bass, just release current note
-                window.bassSynth.triggerRelease(time + stepTime);
-            }
-        }        // Highlight bass current step
+        }
+        // Highlight bass current step
         window.highlightCurrentStep('.bass-step', value.step, window.previousBassStep);
         window.previousBassStep = value.step;
         // Lead - handle long notes (monophonic)
         if (window.leadTrack && window.leadTrack.enabled && window.leadSynth) {
-            const startingNotesL = window.leadTrack.events.filter(event => event.startStep === value.step);
-            startingNotesL.forEach(event => {
-                const freq = Tone.Frequency(window.leadNotes[event.noteIndex]).toFrequency();
-                if (event.startStep === event.endStep) {
-                    window.leadSynth.triggerAttackRelease(freq, stepTime, time);
-                } else {
-                    window.leadSynth.triggerAttack(freq, time);
+            const stepDur = stepTime;
+            const starts = window.leadTrack.events.filter(ev => ev.startStep === value.step);
+            starts.forEach(ev => {
+                const freq = Tone.Frequency(window.leadNotes[ev.noteIndex]).toFrequency();
+                const durSteps = (ev.endStep !== undefined ? (ev.endStep - ev.startStep + 1) : 1);
+                const dur = stepDur * durSteps;
+                try {
+                    window.leadSynth.triggerAttackRelease(freq, dur, time);
+                } catch (e) {
+                    try { window.leadSynth.triggerAttack(freq, time); window.leadSynth.triggerRelease(time + dur); } catch (err) {}
                 }
             });
-
-            const endingNotesL = window.leadTrack.events.filter(event => event.endStep === value.step && event.startStep !== event.endStep);
-            if (endingNotesL.length > 0) {
-                window.leadSynth.triggerRelease(time + stepTime);
-            }
         }
         // Highlight lead current step
         window.highlightCurrentStep('.lead-step', value.step, window.previousLeadStep);
@@ -172,55 +156,45 @@ window.setupTransportSchedule = function() {
         // Rhythm - support both point events ({step}) and span events ({startStep,endStep})
         if (window.rhythmTrack && window.rhythmTrack.enabled && window.rhythmSynth) {
             const events = window.rhythmTrack.events || [];
-
-            // Find events that start on this step (either point events or span starts)
+            const stepDur = stepTime;
+            // Handle starting events (point or span starts)
             const startingEvents = events.filter(ev => (ev.step !== undefined && ev.step === value.step) || (ev.startStep !== undefined && ev.startStep === value.step));
 
+            // immediateNotes: notes that last only one step; sustained: have endStep > startStep
             const immediateNotes = [];
-            const sustainedNotes = [];
+            const sustained = [];
 
             startingEvents.forEach(ev => {
                 if (ev.step !== undefined) {
-                    immediateNotes.push(window.rhythmNotes[ev.noteIndex]);
+                    immediateNotes.push({ note: window.rhythmNotes[ev.noteIndex], durSteps: 1 });
                 } else if (ev.startStep !== undefined) {
-                    if (ev.endStep !== undefined && ev.endStep === ev.startStep) immediateNotes.push(window.rhythmNotes[ev.noteIndex]);
-                    else sustainedNotes.push(window.rhythmNotes[ev.noteIndex]);
+                    const durSteps = (ev.endStep !== undefined ? (ev.endStep - ev.startStep + 1) : 1);
+                    if (durSteps <= 1) immediateNotes.push({ note: window.rhythmNotes[ev.noteIndex], durSteps: 1 });
+                    else sustained.push({ note: window.rhythmNotes[ev.noteIndex], durSteps });
                 }
             });
 
-            // Trigger immediate notes as a chord for the step. Use the same velocity
-            // scaling used by the keyboard chord mode (1 / nVoices, clipped) so sequenced
-            // chords match manual key presses.
             if (immediateNotes.length > 0) {
-                const nVoices = immediateNotes.length;
+                const notes = immediateNotes.map(n => n.note);
+                const nVoices = notes.length;
                 const velocity = Math.max(0.05, 1 / nVoices);
                 try {
-                    window.rhythmSynth.triggerAttackRelease(immediateNotes, stepTime, time, velocity);
+                    window.rhythmSynth.triggerAttackRelease(notes, stepDur, time, velocity);
                 } catch (e) {
-                    immediateNotes.forEach(n => { try { window.rhythmSynth.triggerAttackRelease(n, stepTime, time, velocity); } catch (err) {} });
+                    notes.forEach(n => { try { window.rhythmSynth.triggerAttackRelease(n, stepDur, time, velocity); } catch (err) {} });
                 }
             }
 
-            // Trigger sustained notes (attack now, release scheduled at their endStep)
-            if (sustainedNotes.length > 0) {
-                const nVoices = sustainedNotes.length;
-                const velocity = Math.max(0.05, 1 / nVoices);
-                try {
-                    window.rhythmSynth.triggerAttack(sustainedNotes, time, velocity);
-                } catch (e) {
-                    sustainedNotes.forEach(n => { try { window.rhythmSynth.triggerAttack(n, time, velocity); } catch (err) {} });
-                }
-            }
-
-            // Releases for span events that end on this step
-            const endingEvents = events.filter(ev => ev.endStep !== undefined && ev.endStep === value.step && (ev.startStep === undefined || ev.startStep !== ev.endStep));
-            if (endingEvents.length > 0) {
-                const notesToRelease = endingEvents.map(ev => window.rhythmNotes[ev.noteIndex]);
-                try {
-                    window.rhythmSynth.triggerRelease(notesToRelease, time + stepTime);
-                } catch (e) {
-                    notesToRelease.forEach(n => { try { window.rhythmSynth.triggerRelease(n, time + stepTime); } catch (err) {} });
-                }
+            // sustained notes: schedule with explicit duration to avoid separate release scheduling
+            if (sustained.length > 0) {
+                sustained.forEach(s => {
+                    const dur = stepDur * s.durSteps;
+                    try {
+                        window.rhythmSynth.triggerAttackRelease(s.note, dur, time);
+                    } catch (e) {
+                        try { window.rhythmSynth.triggerAttack(s.note, time); window.rhythmSynth.triggerRelease(time + dur); } catch (err) {}
+                    }
+                });
             }
         }
         // Highlight rhythm current step

@@ -226,7 +226,8 @@ window.drumSounds = [window.drumSampler, window.drumSampler, window.drumSampler,
         try { if (window.leadChain && window.leadChain.volume && window.leadChain.volume.volume && window.leadChain.volume.volume.value !== undefined) window.leadChain.volume.volume.value = -6; else if (window.leadChain && window.leadChain.volume && window.leadChain.volume.value !== undefined) window.leadChain.volume.value = -6; } catch (e) {}
     } catch (e) {}
 try {
-    window.rhythmSynth = new Tone.PolySynth(Tone.Synth, 3);
+    // Increase voice count to reduce voice-stealing when sequencing chords
+    window.rhythmSynth = new Tone.PolySynth(Tone.Synth, 6);
     try { if (window.rhythmSynth && typeof window.rhythmSynth.set === 'function') window.rhythmSynth.set({ oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0.8, release: 0.1 } }); } catch (e) {}
 
     try {
