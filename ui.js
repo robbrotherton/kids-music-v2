@@ -430,12 +430,16 @@ window.initTabs = function() {
             try {
                 const shared = document.getElementById('shared-effects');
                 const drumControls = document.getElementById('drum-controls');
+                const controlsPanel = document.getElementById('controls-panel');
+                // Global shared effects should always be visible at the bottom
+                if (shared) shared.style.display = 'flex';
+                // Drum-specific controls visible only on drums
                 if (tab.dataset.tab === 'drums') {
-                    if (shared) shared.style.display = 'none';
                     if (drumControls) drumControls.style.display = 'block';
+                    if (controlsPanel) controlsPanel.style.display = 'none';
                 } else {
-                    if (shared) shared.style.display = 'flex';
                     if (drumControls) drumControls.style.display = 'none';
+                    if (controlsPanel) controlsPanel.style.display = 'block';
                 }
             } catch (e) {}
             // Rebind shared controls to the active instrument (if available)
