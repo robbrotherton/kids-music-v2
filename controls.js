@@ -243,6 +243,50 @@ window.initRhythmControls = function() {
     });
 };
 
+// Drum controls (basic wiring). These are shown only when the Drums tab is active.
+window.initDrumControls = function() {
+    const kick = document.getElementById('drum-kick-volume');
+    const snare = document.getElementById('drum-snare-volume');
+    const hat = document.getElementById('drum-hat-volume');
+    const decay = document.getElementById('drum-decay');
+
+    if (kick) {
+        kick.addEventListener('input', (e) => {
+            const v = parseFloat(e.target.value);
+            // Try to set sampler output level if available
+            try {
+                if (window.drumSampler && window.drumSampler.volume !== undefined) {
+                    // sampler.volume is a Tone.Signal-like object in some versions
+                    if (window.drumSampler.volume && window.drumSampler.volume.value !== undefined) window.drumSampler.volume.value = v;
+                    else window.drumSampler.volume = v;
+                }
+            } catch (err) {}
+        });
+    }
+    if (snare) {
+        snare.addEventListener('input', (e) => {
+            const v = parseFloat(e.target.value);
+            // no per-sample gain implemented; store in state for future
+            window.controlState.drums = window.controlState.drums || {};
+            window.controlState.drums.snareVolume = v;
+        });
+    }
+    if (hat) {
+        hat.addEventListener('input', (e) => {
+            const v = parseFloat(e.target.value);
+            window.controlState.drums = window.controlState.drums || {};
+            window.controlState.drums.hatVolume = v;
+        });
+    }
+    if (decay) {
+        decay.addEventListener('input', (e) => {
+            const v = parseFloat(e.target.value);
+            window.controlState.drums = window.controlState.drums || {};
+            window.controlState.drums.decay = v;
+        });
+    }
+};
+
 // Lead controls (mirrors bass controls but scoped to leadChain/leadSynth)
 /* lead control initialization removed to reuse shared bass controls for lead (switch via active tab) */
 
@@ -258,6 +302,8 @@ window.initControls = function() {
 
     // Rhythm controls
     initRhythmControls();
+    // Drum controls
+    try { initDrumControls(); } catch (e) {}
 
     // Global controls
     initGlobalControls();

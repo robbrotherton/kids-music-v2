@@ -415,6 +415,29 @@ window.initTabs = function() {
             if (activeGrid) {
                 activeGrid.style.display = 'block';
             }
+            // Move the instrument controls panel into the active tab content so instrument-specific controls sit inside the tab
+            try {
+                const controlsPanel = document.getElementById('controls-panel');
+                const targetContent = document.getElementById(tab.dataset.tab);
+                if (controlsPanel && targetContent) {
+                    // Prefer inserting before known keyboard/pad elements so controls appear above them
+                    const insertBeforeEl = targetContent.querySelector('#drum-pads, #bass-keyboard, #rhythm-keyboard, #lead-keyboard');
+                    if (insertBeforeEl) targetContent.insertBefore(controlsPanel, insertBeforeEl);
+                    else targetContent.insertBefore(controlsPanel, targetContent.firstChild);
+                }
+            } catch (e) {}
+            // Show/hide shared effects vs drum-specific controls
+            try {
+                const shared = document.getElementById('shared-effects');
+                const drumControls = document.getElementById('drum-controls');
+                if (tab.dataset.tab === 'drums') {
+                    if (shared) shared.style.display = 'none';
+                    if (drumControls) drumControls.style.display = 'block';
+                } else {
+                    if (shared) shared.style.display = 'flex';
+                    if (drumControls) drumControls.style.display = 'none';
+                }
+            } catch (e) {}
             // Rebind shared controls to the active instrument (if available)
             try { if (window.bindControlsToInstrument) window.bindControlsToInstrument(tab.dataset.tab); } catch (e) {}
         });
