@@ -1,7 +1,8 @@
 /* Piano keyboard styles */
 .piano-keyboard {
-    background-color: #2c2c2c;
-    border-radius: 8px;
+    background-color: black;
+    border-radius: 5px;
+    padding: 10px;
 }
 
 .piano-keyboard .keys-container {
@@ -58,4 +59,4 @@
 .piano-keyboard .black-key[data-note$="A#3"],
 .piano-keyboard .black-key[data-note$="A#4"] { left: calc(100% / 7 * 5.85); }
 
-#bass-keyboard { background: black; border-radius: 5px; padding: 10px; }
+/* bass-specific id removed — styling now applied to all `.piano-keyboard` elements */
